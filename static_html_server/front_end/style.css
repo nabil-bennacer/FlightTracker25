@@ -1,0 +1,58 @@
+/* static_html_server/front_end/style.css */
+
+body {
+	margin: 0;
+	padding: 0;
+	font-family: Arial, sans-serif;
+	text-align: center;
+	background-color: #f8f8f8;
+  }
+  
+  header {
+	background-color: #333;
+	color: white;
+	padding: 15px 0;
+  }
+  
+  header h1 {
+	margin: 0;
+	font-size: 2em;
+  }
+  
+  #userInfo {
+	margin-top: 10px;
+	font-size: 1em;
+  }
+  
+  #userInfo a {
+	color: #fff;
+	text-decoration: none;
+	margin: 0 5px;
+  }
+  
+  #userInfo a:hover {
+	text-decoration: underline;
+  }
+  
+  #flightsDisplay {
+	width: 90%;
+	max-width: 800px;
+	margin: 20px auto;
+	background: #fff;
+	padding: 10px;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	text-align: left;
+	white-space: pre-wrap;
+	font-size: 0.9em;
+  }
+  
+  #map {
+	width: 90%;
+	height: 70vh;
+	margin: 20px auto;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	background: #eaeaea;
+  }
+  

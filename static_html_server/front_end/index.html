@@ -1,0 +1,29 @@
+<!-- static_html_server/front_end/index.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>FlightTracker</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+  <header>
+    <h1>FlightTracker</h1>
+    <!-- Bandeau d'authentification -->
+    <div id="userInfo">
+      <a href="login.html" id="loginLink">Se connecter</a> |
+      <a href="register.html" id="registerLink">S'inscrire</a>
+    </div>
+  </header>
+
+  <!-- Conteneur pour afficher la liste des vols -->
+  <pre id="flightsDisplay"></pre>
+
+  <!-- La carte -->
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
