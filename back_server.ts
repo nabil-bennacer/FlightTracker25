@@ -135,7 +135,7 @@ async function fetchAndBroadcastFlights() {
     console.error("Erreur OpenSky:", e);
   }
 }
-setInterval(fetchAndBroadcastFlights, 300000); // 4 minutes
+setInterval(fetchAndBroadcastFlights, 60000); // 5 minutes
 
 // App
 const app = new Application();
