@@ -243,7 +243,7 @@ async function fetchAndBroadcastFlights() {
     console.error("Erreur lors du fetch OpenSky:", e);
   }
 }
-setInterval(fetchAndBroadcastFlights, 10000);
+setInterval(fetchAndBroadcastFlights, 300000);
 
 // =====================
 // 5) Configuration de l'application Oak et lancement en HTTPS
