@@ -135,13 +135,13 @@ async function fetchAndBroadcastFlights() {
     console.error("Erreur OpenSky:", e);
   }
 }
-setInterval(fetchAndBroadcastFlights, 60000); // 5 minutes
+setInterval(fetchAndBroadcastFlights, 240000); // 4 minutes
 
 // App
 const app = new Application();
 
 app.use(oakCors({
-  origin: "http://localhost:8080",
+  origin: "https://localhost:8080",
   credentials: true,
 }));
 

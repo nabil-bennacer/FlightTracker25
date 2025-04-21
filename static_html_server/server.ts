@@ -3,6 +3,9 @@ import { Application, send } from "https://deno.land/x/oak@v17.1.4/mod.ts";
 const app = new Application();
 const PORT = 8080;
 
+const cert = await Deno.readTextFile("../certs/cert.crt");
+const key = await Deno.readTextFile("../certs/key.key");
+
 app.use(async (ctx) => {
   const filePath = ctx.request.url.pathname;
   // Ici, on part du principe que tu exécutes le script depuis le dossier static_html_server
@@ -18,5 +21,10 @@ app.use(async (ctx) => {
   }
 });
 
-console.log(`Front server (HTTP) on http://localhost:${PORT}`);
-await app.listen({ port: PORT });
+console.log(`Front server (HTTPs) on https://localhost:${PORT}`);
+await app.listen({
+  port: PORT,
+  secure: true,
+  cert,
+  key,
+});
