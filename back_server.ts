@@ -111,31 +111,68 @@ router.get("/ws", (ctx) => {
 });
 
 interface FlightData {
-  icao24: string;
-  lat: number;
-  lon: number;
-  heading: number;
+  departure?: string;          // code IATA/ICAO aéroport de départ
+  arrival?:   string;          // code IATA/ICAO aéroport d’arrivée
+  depSched?:  number | null;   // heure planifiée 
+  depReal?:   number | null;   // heure réelle 
+  arrSched?:  number | null;
+  arrReal?:   number | null;
+  airline?:   string;          // compagnie
+  reg?:       string;          // immatriculation 
 }
 
-async function fetchAndBroadcastFlights() {
+async function fetchFromOpenSky(): Promise<FlightData[]> {
   try {
     const res = await fetch("https://opensky-network.org/api/states/all");
     if (res.status === 429) {
       console.error("Trop de requêtes à OpenSky");
-      return;
+      return [];
     }
     const data = await res.json();
-    const flightsData: FlightData[] = (data.states || []).map((s: any) => ({
-      icao24: s[0], lat: s[6], lon: s[5], heading: s[10],
+    return (data.states || []).map((s: any) => ({
+      icao24: s[0],
+      lat: s[6],
+      lon: s[5],
+      heading: s[10],
+      source: "OpenSky"
     }));
-    for (const ws of connectedSockets) {
-      ws.send(JSON.stringify(flightsData));
-    }
   } catch (e) {
     console.error("Erreur OpenSky:", e);
+    return [];
   }
 }
-setInterval(fetchAndBroadcastFlights, 240000); // 4 minutes
+
+async function fetchFromADSBExchange(): Promise<FlightData[]> {
+  try {
+    const res = await fetch("https://public-api.adsbexchange.com/VirtualRadar/AircraftList.json");
+    const data = await res.json();
+    return (data.acList || []).map((a: any) => ({
+      icao24: a.Icao || a.Id?.toString() || "unknown",
+      lat: a.Lat,
+      lon: a.Long,
+      heading: a.Trak,
+      source: "ADSBx"
+    })).filter(f => f.lat && f.lon);
+  } catch (e) {
+    console.error("Erreur ADS-B Exchange:", e);
+    return [];
+  }
+}
+
+async function fetchAndBroadcastFlights() {
+  const openSkyFlights = await fetchFromOpenSky();
+  const adsbFlights = await fetchFromADSBExchange();
+
+  const allFlights = [...openSkyFlights, ...adsbFlights];
+  console.log(`📱 ${openSkyFlights.length} OpenSky | ${adsbFlights.length} ADSBx | ${allFlights.length} total`);
+
+  for (const ws of connectedSockets) {
+    ws.send(JSON.stringify(allFlights));
+  }
+}
+
+setInterval(fetchAndBroadcastFlights, 240000);
+fetchAndBroadcastFlights(); // appel initial immédiat
 
 // App
 const app = new Application();
