@@ -1,16 +1,20 @@
-// back_server.ts
-
 import { Application, Router, Context } from "jsr:@oak/oak@17.1.4";
 import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
 import { Database } from "jsr:@db/sqlite";
 import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 import { create, verify, getNumericDate } from "https://deno.land/x/djwt@v2.8/mod.ts";
+import "https://deno.land/std@0.203.0/dotenv/load.ts";
+
 
 const PORT = 3000;
 const JWT_SECRET = "secret-key";
-
 const cert = await Deno.readTextFile("./certs/cert.crt");
 const key = await Deno.readTextFile("./certs/key.key");
+const RAPID_KEY = Deno.env.get("RAPIDAPI_KEY")!;
+const AEROBOX_HOST = "aerodatabox.p.rapidapi.com";
+
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 heures
+const flightCache = new Map<string, { data: any; timestamp: number }>();
 
 const db = new Database("flighttracker.db");
 
@@ -22,11 +26,53 @@ db.exec(`
     password_hash TEXT,
     role TEXT DEFAULT 'user'
   );
+  CREATE TABLE IF NOT EXISTS flights (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    icao24 TEXT,
+    callsign TEXT,
+    departure TEXT,
+    arrival TEXT,
+    dep_sched INTEGER,
+    dep_real INTEGER,
+    arr_sched INTEGER,
+    arr_real INTEGER,
+    airline TEXT,
+    created_at INTEGER
+  );
+  CREATE TABLE IF NOT EXISTS positions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    flight_id INTEGER,
+    latitude REAL,
+    longitude REAL,
+    altitude REAL,
+    heading REAL,
+    timestamp INTEGER,
+    FOREIGN KEY (flight_id) REFERENCES flights(id)
+  );
+  CREATE TABLE IF NOT EXISTS user_flights (
+    user_id INTEGER,
+    flight_id INTEGER,
+    PRIMARY KEY (user_id, flight_id),
+    FOREIGN KEY(user_id) REFERENCES users(id),
+    FOREIGN KEY(flight_id) REFERENCES flights(id)
+  );
+  CREATE TABLE IF NOT EXISTS logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    action TEXT,
+    timestamp INTEGER,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+  );
 `);
 
 const router = new Router();
 
-// Auth helpers
+router.get("/test-key", (ctx) => {
+  const key = Deno.env.get("RAPIDAPI_KEY");
+  ctx.response.body = { key: key || "❌ Aucune clé trouvée" };
+});
+
+
 async function generateJWT(payload: Record<string, unknown>) {
   const header = { alg: "HS256", typ: "JWT" };
   return await create(header, payload, JWT_SECRET);
@@ -34,7 +80,7 @@ async function generateJWT(payload: Record<string, unknown>) {
 
 async function authMiddleware(ctx: Context, next: () => Promise<void>) {
   const token = await ctx.cookies.get("token");
-  if (!token) return ctx.response.status = 401;
+  if (!token) return (ctx.response.status = 401);
   try {
     ctx.state.user = await verify(token, JWT_SECRET, "HS256");
     await next();
@@ -43,13 +89,11 @@ async function authMiddleware(ctx: Context, next: () => Promise<void>) {
   }
 }
 
-// Auth routes
 router.post("/register", async (ctx) => {
   const { username, email, password } = await ctx.request.body({ type: "json" }).value;
   const hash = await bcrypt.hash(password);
   try {
-    db.prepare("INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)")
-      .run(username, email, hash);
+    db.prepare("INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)").run(username, email, hash);
     ctx.response.status = 201;
     ctx.response.body = { message: "Inscription réussie" };
   } catch {
@@ -61,18 +105,13 @@ router.post("/register", async (ctx) => {
 router.post("/login", async (ctx) => {
   const { username, password } = await ctx.request.body({ type: "json" }).value;
   const row = db.prepare("SELECT id, password_hash, role FROM users WHERE username = ?").get(username);
-  if (!row || !(await bcrypt.compare(password, row.password_hash))) {
-    return ctx.response.status = 401;
-  }
+  if (!row || !(await bcrypt.compare(password, row.password_hash))) return (ctx.response.status = 401);
+
   const token = await generateJWT({
     id: row.id, username, role: row.role, exp: getNumericDate(60 * 60)
   });
   await ctx.cookies.set("token", token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "strict",
-    path: "/",
-    maxAge: 3600,
+    httpOnly: true, secure: true, sameSite: "strict", path: "/", maxAge: 3600,
   });
   ctx.response.body = { message: "Connexion réussie" };
 });
@@ -86,102 +125,124 @@ router.post("/logout", (ctx) => {
   ctx.response.body = { message: "Déconnecté" };
 });
 
-// Vols accessibles publiquement
 router.get("/api/flights", (ctx) => {
   const flights = db.prepare("SELECT * FROM flights").all();
   ctx.response.body = { flights };
 });
 
-// WebSocket
-const connectedSockets = new Set<WebSocket>();
+router.get("/details/:callsign", async (ctx) => {
+  const callsign = ctx.params.callsign?.toUpperCase();
+  if (!callsign || callsign === "N/A" || callsign.length < 4) {
+    ctx.response.status = 400;
+    ctx.response.body = { error: "Callsign invalide ou ignoré" };
+    return;
+  }
 
+  const now = Date.now();
+  const cached = flightCache.get(callsign);
+  if (cached && now - cached.timestamp < CACHE_DURATION) {
+    ctx.response.body = cached.data;
+    return;
+  }
+
+  try {
+    const url = `https://${AEROBOX_HOST}/flights/callsign/${callsign}`;
+    const res = await fetch(url, {
+      headers: {
+        "X-RapidAPI-Key": RAPID_KEY,
+        "X-RapidAPI-Host": AEROBOX_HOST,
+      },
+    });
+
+    if (!res.ok) {
+      ctx.response.status = res.status;
+      ctx.response.body = { error: "AeroDataBox error", status: res.status };
+      return;
+    }
+
+    const json = await res.json();
+    const flight = json[0];
+    if (!flight) {
+      ctx.response.status = 404;
+      ctx.response.body = { error: "Aucun vol trouvé" };
+      return;
+    }
+
+   
+    const parseTime = (v: string | undefined): number | null =>
+      v ? Date.parse(v) / 1000 : null;
+    
+    const result = {
+      airline: flight.airline?.name || "?",
+      departure: flight.departure?.airport?.name || "?",
+      arrival: flight.arrival?.airport?.name || "?",
+      depSched: parseTime(flight.departure?.scheduledTimeUtc),
+      depReal: parseTime(flight.departure?.runwayTime?.utc || flight.departure?.revisedTime?.utc),
+      arrSched: parseTime(flight.arrival?.scheduledTimeUtc),
+      arrReal: parseTime(flight.arrival?.predictedTimeUtc),
+    };
+    
+
+    flightCache.set(callsign, { data: result, timestamp: now });
+    ctx.response.body = result;
+  } catch (e) {
+    ctx.response.status = 500;
+    ctx.response.body = { error: "Erreur serveur", details: e.message };
+  }
+});
+
+const connectedSockets = new Set<WebSocket>();
 router.get("/ws", (ctx) => {
   if (!ctx.isUpgradable) ctx.throw(501);
   const ws = ctx.upgrade();
   connectedSockets.add(ws);
-
-  ws.onmessage = (ev) => {
-    console.log("Message WebSocket reçu:", ev.data);
-  };
-
-  ws.onclose = () => {
-    connectedSockets.delete(ws);
-    console.log("Client WebSocket déconnecté");
-  };
+  ws.onclose = () => connectedSockets.delete(ws);
 });
 
 interface FlightData {
-  departure?: string;          // code IATA/ICAO aéroport de départ
-  arrival?:   string;          // code IATA/ICAO aéroport d’arrivée
-  depSched?:  number | null;   // heure planifiée 
-  depReal?:   number | null;   // heure réelle 
-  arrSched?:  number | null;
-  arrReal?:   number | null;
-  airline?:   string;          // compagnie
-  reg?:       string;          // immatriculation 
+  icao24: string;
+  callsign?: string;
+  lat: number;
+  lon: number;
+  heading: number;
+  source: string;
 }
 
 async function fetchFromOpenSky(): Promise<FlightData[]> {
   try {
-    const res = await fetch("https://opensky-network.org/api/states/all");
-    if (res.status === 429) {
-      console.error("Trop de requêtes à OpenSky");
-      return [];
-    }
-    const data = await res.json();
-    return (data.states || []).map((s: any) => ({
+    const r = await fetch("https://opensky-network.org/api/states/all");
+    if (r.status === 429) return [];
+    const j = await r.json();
+    return (j.states || []).map((s: any) => ({
       icao24: s[0],
+      callsign: s[1]?.trim() || "N/A",
       lat: s[6],
       lon: s[5],
       heading: s[10],
-      source: "OpenSky"
+      source: "OpenSky",
     }));
-  } catch (e) {
-    console.error("Erreur OpenSky:", e);
-    return [];
-  }
-}
-
-async function fetchFromADSBExchange(): Promise<FlightData[]> {
-  try {
-    const res = await fetch("https://public-api.adsbexchange.com/VirtualRadar/AircraftList.json");
-    const data = await res.json();
-    return (data.acList || []).map((a: any) => ({
-      icao24: a.Icao || a.Id?.toString() || "unknown",
-      lat: a.Lat,
-      lon: a.Long,
-      heading: a.Trak,
-      source: "ADSBx"
-    })).filter(f => f.lat && f.lon);
-  } catch (e) {
-    console.error("Erreur ADS-B Exchange:", e);
+  } catch {
     return [];
   }
 }
 
 async function fetchAndBroadcastFlights() {
-  const openSkyFlights = await fetchFromOpenSky();
-  const adsbFlights = await fetchFromADSBExchange();
-
-  const allFlights = [...openSkyFlights, ...adsbFlights];
-  console.log(`📱 ${openSkyFlights.length} OpenSky | ${adsbFlights.length} ADSBx | ${allFlights.length} total`);
-
+  const os = await fetchFromOpenSky();
   for (const ws of connectedSockets) {
-    ws.send(JSON.stringify(allFlights));
+    ws.send(JSON.stringify(os));
   }
 }
 
-setInterval(fetchAndBroadcastFlights, 240000);
-fetchAndBroadcastFlights(); // appel initial immédiat
+setInterval(fetchAndBroadcastFlights, 60000);
+fetchAndBroadcastFlights();
 
-// App
 const app = new Application();
-
 app.use(oakCors({
   origin: "https://localhost:8080",
   credentials: true,
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Cookie"],
 }));
-
 app.use(router.routes());
 app.use(router.allowedMethods());
 
