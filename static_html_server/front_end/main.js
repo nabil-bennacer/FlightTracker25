@@ -8,7 +8,7 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 const aircraftMarkers = {};
 
 function epochToTimeString(timestamp) {
-  if (!timestamp) return "?";
+  if (!timestamp) return "N/A";
   const d = new Date(timestamp * 1000);
   return d.toISOString().substring(11, 16) + " UTC";
 }
