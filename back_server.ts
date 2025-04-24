@@ -7,7 +7,7 @@ import "https://deno.land/std@0.203.0/dotenv/load.ts";
 
 
 const PORT = 3000;
-const JWT_SECRET = "secret-key";
+const JWT_SECRET = new TextEncoder().encode("secret-key");
 const cert = await Deno.readTextFile("./certs/cert.crt");
 const key = await Deno.readTextFile("./certs/key.key");
 const RAPID_KEY = Deno.env.get("RAPIDAPI_KEY")!;
@@ -106,17 +106,35 @@ router.post("/register", async (ctx) => {
 router.post("/login", async (ctx) => {
   const body = await ctx.request.body.json();
   const { username, password } = body;
+
+  if (!username || !password) {
+    ctx.response.status = 400;
+    ctx.response.body = { error: "Données manquantes" };
+    return;
+  }
+
   const row = db.prepare("SELECT id, password_hash, role FROM users WHERE username = ?").get(username);
-  if (!row || !(await bcrypt.compare(password, row.password_hash))) return (ctx.response.status = 401);
+
+  if (!row || !(await bcrypt.compare(password, row.password_hash))) {
+    ctx.response.status = 401;
+    ctx.response.body = { error: "Identifiants invalides" };
+    return;
+  }
 
   const token = await generateJWT({
-    id: row.id, username, role: row.role, exp: getNumericDate(60 * 60)
+    id: row.id,
+    username: username,
+    role: row.role,
+    exp: getNumericDate(60 * 60),
   });
+
   await ctx.cookies.set("token", token, {
     httpOnly: true, secure: true, sameSite: "strict", path: "/", maxAge: 3600,
   });
+
   ctx.response.body = { message: "Connexion réussie" };
 });
+
 
 router.get("/auth/me", authMiddleware, (ctx) => {
   ctx.response.body = { username: ctx.state.user.username };
