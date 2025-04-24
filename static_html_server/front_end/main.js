@@ -113,20 +113,20 @@ map.on("singleclick", function (evt) {
 
 ws.onerror = (err) => console.error("Erreur WebSocket:", err);
 
-async function checkAuth() {
+window.addEventListener("DOMContentLoaded", async () => {
   try {
-    const res = await fetch(`${API_BASE}/auth/me`, { credentials: "include" });
+    const res = await fetch("https://localhost:3000/auth/me", { credentials: "include" });
     if (res.ok) {
       const data = await res.json();
-      document.getElementById("userInfo").innerHTML = `Bonjour, ${data.username} <a href=\"#\" id=\"logoutLink\">Déconnexion</a>`;
+      const userInfo = document.getElementById("userInfo");
+      userInfo.innerHTML = `Bonjour, ${data.username} <a href="#" id="logoutLink">Déconnexion</a>`;
       document.getElementById("logoutLink").addEventListener("click", async (e) => {
         e.preventDefault();
-        await fetch(`${API_BASE}/logout`, { method: "POST", credentials: "include" });
+        await fetch("https://localhost:3000/logout", { method: "POST", credentials: "include" });
         window.location.href = "login.html";
       });
     }
   } catch {
     console.warn("Non authentifié.");
   }
-}
-checkAuth();
+});

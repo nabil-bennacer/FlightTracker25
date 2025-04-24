@@ -90,7 +90,8 @@ async function authMiddleware(ctx: Context, next: () => Promise<void>) {
 }
 
 router.post("/register", async (ctx) => {
-  const { username, email, password } = await ctx.request.body({ type: "json" }).value;
+  const body = await ctx.request.body.json();
+  const { username, email, password } = body;
   const hash = await bcrypt.hash(password);
   try {
     db.prepare("INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)").run(username, email, hash);
@@ -103,7 +104,8 @@ router.post("/register", async (ctx) => {
 });
 
 router.post("/login", async (ctx) => {
-  const { username, password } = await ctx.request.body({ type: "json" }).value;
+  const body = await ctx.request.body.json();
+  const { username, password } = body;
   const row = db.prepare("SELECT id, password_hash, role FROM users WHERE username = ?").get(username);
   if (!row || !(await bcrypt.compare(password, row.password_hash))) return (ctx.response.status = 401);
 

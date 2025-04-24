@@ -45,3 +45,78 @@
   .ol-popup-closer:after {
 	content: "✖";
   }
+  
+  /* Ajout styles généraux pour auth */
+  body {
+	font-family: Arial, sans-serif;
+	margin: 0;
+	padding: 0;
+	background-color: #f4f6f8;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+  }
+  
+  h1, h2 {
+	color: #333;
+	margin-top: 40px;
+  }
+  
+  form {
+	background: #fff;
+	padding: 20px;
+	border-radius: 8px;
+	box-shadow: 0 0 10px rgba(0,0,0,0.1);
+	max-width: 400px;
+	width: 90%;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-bottom: 40px;
+  }
+  
+  form input[type="text"],
+  form input[type="email"],
+  form input[type="password"] {
+	padding: 10px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	font-size: 16px;
+  }
+  
+  form button {
+	padding: 10px;
+	background-color: #1976d2;
+	color: white;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 16px;
+	transition: background-color 0.3s;
+  }
+  
+  form button:hover {
+	background-color: #155fa0;
+  }
+  
+  label {
+	font-weight: bold;
+	color: #555;
+	margin-top: 10px;
+  }
+  
+  #userInfo {
+	margin-top: 10px;
+	font-size: 1em;
+  }
+  
+  #userInfo a {
+	color: #1976d2;
+	text-decoration: none;
+	margin: 0 5px;
+  }
+  
+  #userInfo a:hover {
+	text-decoration: underline;
+  }
+  
