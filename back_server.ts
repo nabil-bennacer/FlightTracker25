@@ -173,14 +173,22 @@ router.get("/details/:callsign", async (ctx) => {
       v ? Date.parse(v) / 1000 : null;
     
     const result = {
-      airline: flight.airline?.name || "?",
-      departure: flight.departure?.airport?.name || "?",
-      arrival: flight.arrival?.airport?.name || "?",
-      depSched: parseTime(flight.departure?.scheduledTimeUtc),
-      depReal: parseTime(flight.departure?.runwayTime?.utc || flight.departure?.revisedTime?.utc),
-      arrSched: parseTime(flight.arrival?.scheduledTimeUtc),
-      arrReal: parseTime(flight.arrival?.predictedTimeUtc),
+      airline: flight.airline?.name || "N/D",
+      departure: flight.departure?.airport?.name || "N/D",
+      arrival: flight.arrival?.airport?.name || "N/D",
+      depSched: parseTime(flight.departure?.scheduledTime?.utc),
+      depReal: parseTime(
+        flight.departure?.actualTime?.utc ||
+        flight.departure?.runwayTime?.utc ||
+        flight.departure?.revisedTime?.utc
+      ),
+      arrSched: parseTime(flight.arrival?.scheduledTime?.utc),
+      arrReal: parseTime(
+        flight.arrival?.actualTime?.utc ||
+        flight.arrival?.predictedTime?.utc
+      ),
     };
+    
     
 
     flightCache.set(callsign, { data: result, timestamp: now });
@@ -233,7 +241,7 @@ async function fetchAndBroadcastFlights() {
   }
 }
 
-setInterval(fetchAndBroadcastFlights, 60000);
+setInterval(fetchAndBroadcastFlights, 60000); // 1 minute
 fetchAndBroadcastFlights();
 
 const app = new Application();
