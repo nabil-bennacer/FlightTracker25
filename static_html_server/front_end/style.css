@@ -1,11 +1,54 @@
-.ol-map {
-	width: 90%;
-	height: 70vh;
-	margin: 20px auto;
-	border: 1px solid #ccc;
-	border-radius: 5px;
+html, body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	font-family: Arial, sans-serif;
   }
   
+  /* Carte OpenLayers plein écran */
+  #map {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 0;
+  }
+  
+  /* Header flottant par-dessus la carte */
+  header {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	z-index: 10;
+	background-color: rgba(51, 51, 51, 0.9);
+	color: white;
+	padding: 15px 0;
+	text-align: center;
+  }
+  
+  header h1 {
+	margin: 0;
+	font-size: 2em;
+  }
+  
+  #userInfo {
+	margin-top: 5px;
+	font-size: 0.9em;
+  }
+  
+  #userInfo a {
+	color: #fff;
+	text-decoration: none;
+	margin: 0 5px;
+  }
+  
+  #userInfo a:hover {
+	text-decoration: underline;
+  }
+  
+  /* Pop-up OpenLayers */
   .ol-popup {
 	position: absolute;
 	background-color: white;
@@ -16,6 +59,7 @@
 	bottom: 12px;
 	left: -50px;
 	min-width: 280px;
+	z-index: 20;
   }
   
   .ol-popup:after, .ol-popup:before {
@@ -46,22 +90,7 @@
 	content: "✖";
   }
   
-  /* Ajout styles généraux pour auth */
-  body {
-	font-family: Arial, sans-serif;
-	margin: 0;
-	padding: 0;
-	background-color: #f4f6f8;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-  }
-  
-  h1, h2 {
-	color: #333;
-	margin-top: 40px;
-  }
-  
+  /* Formulaires (login/register) */
   form {
 	background: #fff;
 	padding: 20px;
@@ -72,7 +101,9 @@
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
-	margin-bottom: 40px;
+	margin: 80px auto 40px auto;
+	z-index: 100;
+	position: relative;
   }
   
   form input[type="text"],
@@ -84,7 +115,8 @@
 	font-size: 16px;
   }
   
-  form button {
+  form button,
+  button.secondary-button {
 	padding: 10px;
 	background-color: #1976d2;
 	color: white;
@@ -93,9 +125,11 @@
 	cursor: pointer;
 	font-size: 16px;
 	transition: background-color 0.3s;
+	margin-top: 10px;
   }
   
-  form button:hover {
+  form button:hover,
+  button.secondary-button:hover {
 	background-color: #155fa0;
   }
   
@@ -105,35 +139,3 @@
 	margin-top: 10px;
   }
   
-  #userInfo {
-	margin-top: 10px;
-	font-size: 1em;
-  }
-  
-  #userInfo a {
-	color: #1976d2;
-	text-decoration: none;
-	margin: 0 5px;
-  }
-  
-  #userInfo a:hover {
-	text-decoration: underline;
-  }
-  
-form button,
-button.secondary-button {
-  padding: 10px;
-  background-color: #1976d2;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.3s;
-  margin-top: 10px;
-}
-
-form button:hover,
-button.secondary-button:hover {
-  background-color: #155fa0;
-}
