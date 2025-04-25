@@ -231,10 +231,15 @@ router.get("/details/:callsign", async (ctx) => {
 });
 
 const connectedSockets = new Set<WebSocket>();
-router.get("/ws", (ctx) => {
+router.get("/ws", async (ctx) => {
   if (!ctx.isUpgradable) ctx.throw(501);
   const ws = ctx.upgrade();
   connectedSockets.add(ws);
+
+  // Envoie les avions immédiatement au nouveau client connecté
+  const flights = await fetchFromOpenSky();
+  ws.send(JSON.stringify(flights));
+
   ws.onclose = () => connectedSockets.delete(ws);
 });
 
@@ -285,5 +290,5 @@ app.use(oakCors({
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-console.log(`✅ Backend HTTPS sur https://localhost:${PORT}`);
+console.log(`Backend HTTPS sur https://localhost:${PORT}`);
 await app.listen({ port: PORT, secure: true, cert, key });

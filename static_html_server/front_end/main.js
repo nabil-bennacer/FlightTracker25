@@ -123,7 +123,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("logoutLink").addEventListener("click", async (e) => {
         e.preventDefault();
         await fetch("https://localhost:3000/logout", { method: "POST", credentials: "include" });
-        window.location.href = "login.html";
+        window.location.href = "index.html";
       });
     }
   } catch {
