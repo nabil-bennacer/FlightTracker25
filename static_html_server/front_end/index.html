@@ -9,10 +9,14 @@
 <body>
   <header>
     <h1>FlightTracker</h1>
-    <div id="userInfo">
-      <a href="login.html" id="loginLink">Se connecter</a> |
-      <a href="register.html" id="registerLink">S'inscrire</a>
+    <div id="userMenu" class="dropdown">
+      <button class="dropbtn">☰</button>
+      <div class="dropdown-content" id="authOptions">
+        <a href="login.html">Se connecter</a>
+        <a href="register.html">S'inscrire</a>
+      </div>
     </div>
+    
   </header>
 
   <div id="map"></div>

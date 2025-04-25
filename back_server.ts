@@ -156,6 +156,14 @@ router.post("/logout", (ctx) => {
   ctx.response.body = { message: "Déconnecté" };
 });
 
+router.delete("/delete-account", authMiddleware, (ctx) => {
+  const userId = ctx.state.user.id;
+  db.prepare("DELETE FROM users WHERE id = ?").run(userId);
+  ctx.cookies.delete("token", { path: "/" });
+  ctx.response.body = { message: "Compte supprimé" };
+});
+
+
 router.get("/api/flights", (ctx) => {
   const flights = db.prepare("SELECT * FROM flights").all();
   ctx.response.body = { flights };
@@ -284,7 +292,7 @@ const app = new Application();
 app.use(oakCors({
   origin: "https://localhost:8080",
   credentials: true,
-  methods: ["GET", "POST", "OPTIONS"],
+  methods: ["GET", "POST", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Cookie"],
 }));
 app.use(router.routes());

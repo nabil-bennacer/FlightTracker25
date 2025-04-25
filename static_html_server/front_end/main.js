@@ -116,17 +116,46 @@ ws.onerror = (err) => console.error("Erreur WebSocket:", err);
 window.addEventListener("DOMContentLoaded", async () => {
   try {
     const res = await fetch("https://localhost:3000/auth/me", { credentials: "include" });
+    const menu = document.getElementById("authOptions");
+
     if (res.ok) {
       const data = await res.json();
-      const userInfo = document.getElementById("userInfo");
-      userInfo.innerHTML = `Bonjour, ${data.username} <a href="#" id="logoutLink">Déconnexion</a>`;
+
+      menu.innerHTML = `
+        <span style="padding: 12px 16px; font-weight: bold;">Bonjour, ${data.username}</span>
+        <a href="#" id="logoutLink">Déconnexion</a>
+        <button id="deleteBtn" class="confirm-delete">Supprimer mon compte</button>
+      `;
+
       document.getElementById("logoutLink").addEventListener("click", async (e) => {
         e.preventDefault();
-        await fetch("https://localhost:3000/logout", { method: "POST", credentials: "include" });
+        await fetch("https://localhost:3000/logout", {
+          method: "POST",
+          credentials: "include"
+        });
         window.location.href = "index.html";
       });
+
+      document.getElementById("deleteBtn").addEventListener("click", async () => {
+        const confirmDelete = confirm("❌ Êtes-vous sûr de vouloir supprimer votre compte ?");
+        if (confirmDelete) {
+          await fetch("https://localhost:3000/delete-account", {
+            method: "DELETE",
+            credentials: "include"
+          });
+          alert("Votre compte a été supprimé.");
+          window.location.href = "index.html";
+        }
+      });
+
+    } else {
+      menu.innerHTML = `
+        <a href="login.html">Se connecter</a>
+        <a href="register.html">S'inscrire</a>
+      `;
     }
   } catch {
     console.warn("Non authentifié.");
   }
 });
+
