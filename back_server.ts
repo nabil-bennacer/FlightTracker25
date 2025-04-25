@@ -7,7 +7,11 @@ import "https://deno.land/std@0.203.0/dotenv/load.ts";
 
 
 const PORT = 3000;
-const JWT_SECRET = new TextEncoder().encode("secret-key");
+const JWT_SECRET = await crypto.subtle.generateKey(
+  { name: "HMAC", hash: "SHA-256" },
+  true,
+  ["sign", "verify"]
+);
 const cert = await Deno.readTextFile("./certs/cert.crt");
 const key = await Deno.readTextFile("./certs/key.key");
 const RAPID_KEY = Deno.env.get("RAPIDAPI_KEY")!;
@@ -98,7 +102,7 @@ router.post("/register", async (ctx) => {
     ctx.response.status = 201;
     ctx.response.body = { message: "Inscription réussie" };
   } catch {
-    ctx.response.status = 400;
+    ctx.response.status = 400; 
     ctx.response.body = { error: "Utilisateur déjà existant" };
   }
 });
@@ -120,6 +124,13 @@ router.post("/login", async (ctx) => {
     ctx.response.body = { error: "Identifiants invalides" };
     return;
   }
+
+  if (!username || !row.id || !row.role) {
+    ctx.response.status = 500;
+    ctx.response.body = { error: "Échec génération JWT (données manquantes)" };
+    return;
+  }
+
 
   const token = await generateJWT({
     id: row.id,
