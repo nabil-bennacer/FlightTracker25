@@ -16,8 +16,16 @@
         <a href="register.html">S'inscrire</a>
       </div>
     </div>
-    
   </header>
+
+  <div id="searchBar" style="display:none; padding: 10px; position: absolute; top: 80px; left: 20px; z-index: 20;">
+    <input type="text" id="flightSearch" placeholder="🔍 Rechercher un vol (ex: AFR123)" style="padding: 6px; width: 250px; border-radius: 4px; border: 1px solid #ccc;" />
+  </div>
+
+  <div id="favoritesSection" style="display:none; position: absolute; top: 130px; left: 20px; z-index: 20; background: white; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+    <h3>⭐ Mes favoris</h3>
+    <ul id="favoritesList" style="margin: 0; padding-left: 20px;"></ul>
+  </div>
 
   <div id="map"></div>
 

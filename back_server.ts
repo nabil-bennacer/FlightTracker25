@@ -8,7 +8,7 @@ import "https://deno.land/std@0.203.0/dotenv/load.ts";
 
 const PORT = 3000;
 const JWT_SECRET = await crypto.subtle.generateKey(
-  { name: "HMAC", hash: "SHA-256" },
+  { name: "HMAC", hash: "SHA-512" },
   true,
   ["sign", "verify"]
 );
@@ -78,15 +78,21 @@ router.get("/test-key", (ctx) => {
 
 
 async function generateJWT(payload: Record<string, unknown>) {
-  const header = { alg: "HS256", typ: "JWT" };
+  const header = { alg: "HS512", typ: "JWT" };
   return await create(header, payload, JWT_SECRET);
 }
 
 async function authMiddleware(ctx: Context, next: () => Promise<void>) {
+  if (ctx.request.method === "OPTIONS") {
+    // Laisser passer les préflight sans vérification JWT
+    ctx.response.status = 204;
+    return;
+  }
+  
   const token = await ctx.cookies.get("token");
   if (!token) return (ctx.response.status = 401);
   try {
-    ctx.state.user = await verify(token, JWT_SECRET, "HS256");
+    ctx.state.user = await verify(token, JWT_SECRET, "HS512");
     await next();
   } catch {
     ctx.response.status = 401;
@@ -238,6 +244,46 @@ router.get("/details/:callsign", async (ctx) => {
   }
 });
 
+// Partie qui gère les vols favoris
+// Obtenir les favoris
+router.get("/favorites", authMiddleware, (ctx) => {
+  const userId = ctx.state.user.id;
+
+  const rows = db.prepare(`
+    SELECT f.icao24, f.callsign
+    FROM flights f
+    JOIN user_flights uf ON f.icao24 = uf.flight_id
+    WHERE uf.user_id = ?
+  `).all(userId);
+
+  ctx.response.body = rows;
+});
+
+// Ajouter un favori
+router.post("/favorites", authMiddleware, async (ctx) => {
+  const userId = ctx.state.user.id;
+  const { icao24, callsign } = await ctx.request.body().value;
+
+  db.prepare("INSERT OR IGNORE INTO flights (icao24, callsign, created_at) VALUES (?, ?, ?)").run(
+    icao24,
+    callsign,
+    Date.now()
+  );
+
+  db.prepare("INSERT OR IGNORE INTO user_flights (user_id, flight_id) VALUES (?, ?)").run(userId, icao24);
+  ctx.response.body = { message: "Ajouté aux favoris." };
+});
+
+// Supprimer un favori
+router.delete("/favorites/:id", authMiddleware, (ctx) => {
+  const userId = ctx.state.user.id;
+  const flightId = ctx.params.id;
+
+  db.prepare("DELETE FROM user_flights WHERE user_id = ? AND flight_id = ?").run(userId, flightId);
+  ctx.response.body = { message: "Favori supprimé" };
+});
+
+
 const connectedSockets = new Set<WebSocket>();
 router.get("/ws", async (ctx) => {
   if (!ctx.isUpgradable) ctx.throw(501);
@@ -293,8 +339,14 @@ app.use(oakCors({
   origin: "https://localhost:8080",
   credentials: true,
   methods: ["GET", "POST", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Cookie"],
+  allowedHeaders: ["Content-Type", "Cookie", "Authorization"],
+  preflightContinue: true,
 }));
+
+router.options("(.*)", (ctx) => {
+  ctx.response.status = 204;
+});
+
 app.use(router.routes());
 app.use(router.allowedMethods());
 

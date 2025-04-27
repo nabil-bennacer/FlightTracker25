@@ -138,7 +138,7 @@ html, body {
 	color: #555;
 	margin-top: 10px;
   }
-  
+
 
   .dropdown {
 	position: absolute;
@@ -194,5 +194,45 @@ html, body {
 	color: white;
 	font-weight: bold;
   }
+
+  #searchBar input {
+	padding: 6px;
+	width: 250px;
+	border-radius: 4px;
+	border: 1px solid #ccc;
+	font-size: 15px;
+  }
+  
+  #favoritesSection {
+	background-color: white;
+	padding: 10px;
+	border-radius: 6px;
+	border: 1px solid #ccc;
+	max-height: 300px;
+	overflow-y: auto;
+  }
+  
+  #favoritesSection h3 {
+	margin: 0 0 5px 0;
+	font-size: 1.1em;
+  }
+  
+  #favoritesList li {
+	margin-bottom: 5px;
+	list-style: none;
+	cursor: pointer;
+  }
+  
+  #favoritesList button {
+	margin-left: 10px;
+	background-color: crimson;
+	color: white;
+	border: none;
+	border-radius: 3px;
+	cursor: pointer;
+	padding: 3px 6px;
+	font-size: 0.85em;
+  }
+  
   
   
