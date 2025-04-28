@@ -2,16 +2,18 @@ import { Application, Router, Context } from "jsr:@oak/oak@17.1.4";
 import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
 import { Database } from "jsr:@db/sqlite";
 import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
-import { create, verify, getNumericDate } from "https://deno.land/x/djwt@v2.8/mod.ts";
+import { create, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 import "https://deno.land/std@0.203.0/dotenv/load.ts";
-
+import { verify } from "https://deno.land/x/djwt/mod.ts";
 
 const PORT = 3000;
-const JWT_SECRET = await crypto.subtle.generateKey(
+
+const JWT_SECRET = Deno.env.get("JWT_SECRET") || await crypto.subtle.generateKey(
   { name: "HMAC", hash: "SHA-512" },
   true,
   ["sign", "verify"]
 );
+
 const cert = await Deno.readTextFile("./certs/cert.crt");
 const key = await Deno.readTextFile("./certs/key.key");
 const RAPID_KEY = Deno.env.get("RAPIDAPI_KEY")!;
@@ -85,16 +87,25 @@ async function generateJWT(payload: Record<string, unknown>) {
 async function authMiddleware(ctx: Context, next: () => Promise<void>) {
   if (ctx.request.method === "OPTIONS") {
     // Laisser passer les préflight sans vérification JWT
-    ctx.response.status = 204;
+    console.log("OPTIONS request - skipping JWT verification");
+    next();
     return;
   }
   
   const token = await ctx.cookies.get("token");
-  if (!token) return (ctx.response.status = 401);
+  console.log("Token received:", token);
+  if (!token) {
+    console.log("No token found, returning 401");
+    ctx.response.status = 401;
+    return;
+  }
+  
   try {
-    ctx.state.user = await verify(token, JWT_SECRET, "HS512");
+    ctx.state.user = await verify(token, JWT_SECRET);
+    console.log("Token verified successfully, user:", ctx.state.user);
     await next();
-  } catch {
+  } catch (error) {
+    console.error("Token verification failed:", error.message);
     ctx.response.status = 401;
   }
 }
@@ -263,7 +274,10 @@ router.get("/favorites", authMiddleware, (ctx) => {
 // Ajouter un favori
 router.post("/favorites", authMiddleware, async (ctx) => {
   const userId = ctx.state.user.id;
-  const { icao24, callsign } = await ctx.request.body().value;
+  const body = await ctx.request.body({ type: "json" }).value;
+  const { icao24, callsign } = body;
+
+  console.log("Ajouté aux favoris:", icao24, callsign);
 
   db.prepare("INSERT OR IGNORE INTO flights (icao24, callsign, created_at) VALUES (?, ?, ?)").run(
     icao24,
