@@ -219,6 +219,7 @@ router.get("/details/:callsign", async (ctx) => {
     
     const result = {
       airline: flight.airline?.name || "N/D",
+      model: flight.aircraft?.model || "N/D",
       departure: flight.departure?.airport?.name || "N/D",
       arrival: flight.arrival?.airport?.name || "N/D",
       depSched: parseTime(flight.departure?.scheduledTime?.utc),
@@ -316,6 +317,7 @@ async function fetchFromOpenSky(): Promise<FlightData[]> {
       callsign: s[1]?.trim() || "N/A",
       lat: s[6],
       lon: s[5],
+      geo_altitude: s[7],
       heading: s[10],
       source: "OpenSky",
     }));

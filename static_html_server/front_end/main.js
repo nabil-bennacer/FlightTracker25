@@ -56,7 +56,7 @@ ws.onopen = () => console.log("🟢 WebSocket connecté à /ws");
 ws.onmessage = async (event) => {
   const planes = JSON.parse(event.data);
   for (const plane of planes) {
-    const { icao24, lat, lon, heading, callsign } = plane;
+    const { icao24, lat, lon, heading, callsign, geo_altitude } = plane;
     if (!lat || !lon) continue;
 
     const coords = ol.proj.fromLonLat([lon, lat]);
@@ -93,15 +93,17 @@ ws.onmessage = async (event) => {
           const res = await fetch(`${API_BASE}/details/${callsign.trim().replace(/\s+/g, "")}`);
           const data = await res.json();
           content += `
-            Compagnie : ${data.airline || "?"}<br><br>
-            <u>Départ</u> : ${data.departure || "?"}<br>
+            Compagnie : ${data.airline || "N/D"}<br>
+            Modèle : ${data.model || "N/D"}<br><br>
+            <u>Départ</u> : ${data.departure || "N/D"}<br>
             &nbsp;&nbsp;Prévu : ${epochToTimeString(data.depSched)}<br>
             &nbsp;&nbsp;Réel : ${epochToTimeString(data.depReal)}<br><br>
-            <u>Arrivée</u> : ${data.arrival || "?"}<br>
+            <u>Arrivée</u> : ${data.arrival || "N/D"}<br>
             &nbsp;&nbsp;Prévu : ${epochToTimeString(data.arrSched)}<br>
             &nbsp;&nbsp;Réel : ${epochToTimeString(data.arrReal)}<br><br>
             📍 Lat : ${lat}<br>
             📍 Lon : ${lon}<br>
+            ✈️ Altitude : ${plane.geo_altitude ? (plane.geo_altitude * 3.28084).toFixed(0) + " ft" : "N/D"}<br>
             🎯 Cap : ${heading}`;
         } catch (err) {
           content += `Erreur lors du chargement des détails.<br>📍 Lat : ${lat}<br>📍 Lon : ${lon}<br>🎯 Cap : ${heading}`;
