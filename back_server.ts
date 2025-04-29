@@ -225,6 +225,21 @@ router.get("/details/:callsign", async (ctx) => {
     }
 
    
+    router.get("/favorites", authMiddleware, (ctx) => {
+      const userId = ctx.state.user.id;
+    
+      const rows = db.prepare(`
+        SELECT f.icao24, f.callsign
+          FROM flights f
+          JOIN user_flights uf
+            ON f.id = uf.flight_id      
+         WHERE uf.user_id = ?
+      `).all(userId);
+      
+    
+      ctx.response.body = rows;
+    });
+    
     const parseTime = (v: string | undefined): number | null =>
       v ? Date.parse(v) / 1000 : null;
     
@@ -251,7 +266,10 @@ router.get("/details/:callsign", async (ctx) => {
     flightCache.set(callsign, { data: result, timestamp: now });
     ctx.response.body = result;
   } catch (e) {
-    ctx.response.status = 500;
+    ctx.response.status = 500;state.user.id;
+
+    // 2) Parse le body JSON pour en extraire icao24 et callsign
+    const { icao24, callsign } = await ctx.request.body({ type: "json" }).value;
     ctx.response.body = { error: "Erreur serveur", details: e.message };
   }
 });
@@ -279,7 +297,8 @@ router.post("/favorites", authMiddleware, async (ctx: Context) => {
   const userId = ctx.state.user.id;
 
   // 2) Parse le body JSON pour en extraire icao24 et callsign
-  const { icao24, callsign } = await ctx.request.body({ type: "json" }).value;
+  const body = await ctx.request.body.json();
+  const { icao24, callsign } = body;
 
   console.log("Ajouté aux favoris:", icao24, callsign);
 
@@ -374,17 +393,22 @@ fetchAndBroadcastFlights();
 
 const app = new Application();
 app.use(oakCors({
-  origin: "https://localhost:8080",
-  credentials: true,
-  methods: ["GET", "POST", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Cookie", "Authorization"],
-  preflightContinue: true,
+  origin: "https://localhost:8080",        
+  credentials: true,                       
+  methods: ["GET","POST","DELETE","OPTIONS"],
+  allowedHeaders: ["Content-Type","Cookie","Authorization"],
 }));
 
-router.options("(.*)", (ctx) => {
-  ctx.response.status = 204;
+// 2) Gestion explicite des préflight OPTIONS
+app.use(async (ctx, next) => {
+  if (ctx.request.method === "OPTIONS") {
+    ctx.response.status = 204;
+    return;
+  }
+  await next();
 });
 
+// 3) Montage du router
 app.use(router.routes());
 app.use(router.allowedMethods());
 
