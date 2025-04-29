@@ -8,7 +8,7 @@ import { verify } from "https://deno.land/x/djwt/mod.ts";
 
 const PORT = 3000;
 
-const JWT_SECRET = Deno.env.get("JWT_SECRET") || await crypto.subtle.generateKey(
+const JWT_SECRET = await crypto.subtle.generateKey(
   { name: "HMAC", hash: "SHA-512" },
   true,
   ["sign", "verify"]
@@ -86,29 +86,29 @@ async function generateJWT(payload: Record<string, unknown>) {
 
 async function authMiddleware(ctx: Context, next: () => Promise<void>) {
   if (ctx.request.method === "OPTIONS") {
-    // Laisser passer les préflight sans vérification JWT
-    console.log("OPTIONS request - skipping JWT verification");
-    next();
+    ctx.response.status = 204;
     return;
   }
-  
+
   const token = await ctx.cookies.get("token");
-  console.log("Token received:", token);
   if (!token) {
-    console.log("No token found, returning 401");
     ctx.response.status = 401;
     return;
   }
-  
+
+  let payload;
   try {
-    ctx.state.user = await verify(token, JWT_SECRET);
-    console.log("Token verified successfully, user:", ctx.state.user);
-    await next();
-  } catch (error) {
-    console.error("Token verification failed:", error.message);
+    // passe bien ton algorithme ici si besoin
+    payload = await verify(token, JWT_SECRET, "HS512");
+  } catch (err) {
     ctx.response.status = 401;
+    return;
   }
+
+  ctx.state.user = payload;
+  await next();    // seul next est en dehors du try/catch
 }
+
 
 router.post("/register", async (ctx) => {
   const body = await ctx.request.body.json();
@@ -263,29 +263,51 @@ router.get("/favorites", authMiddleware, (ctx) => {
 
   const rows = db.prepare(`
     SELECT f.icao24, f.callsign
-    FROM flights f
-    JOIN user_flights uf ON f.icao24 = uf.flight_id
-    WHERE uf.user_id = ?
+      FROM flights f
+      JOIN user_flights uf
+        ON f.id = uf.flight_id      
+     WHERE uf.user_id = ?
   `).all(userId);
+  
 
   ctx.response.body = rows;
 });
 
 // Ajouter un favori
-router.post("/favorites", authMiddleware, async (ctx) => {
+router.post("/favorites", authMiddleware, async (ctx: Context) => {
+  // 1) Récupère l'ID de l'utilisateur authentifié
   const userId = ctx.state.user.id;
-  const body = await ctx.request.body({ type: "json" }).value;
-  const { icao24, callsign } = body;
+
+  // 2) Parse le body JSON pour en extraire icao24 et callsign
+  const { icao24, callsign } = await ctx.request.body({ type: "json" }).value;
 
   console.log("Ajouté aux favoris:", icao24, callsign);
 
-  db.prepare("INSERT OR IGNORE INTO flights (icao24, callsign, created_at) VALUES (?, ?, ?)").run(
+  // 3) Crée ou ignore le vol dans la table flights
+  db.prepare(
+    `INSERT OR IGNORE INTO flights (icao24, callsign, created_at)
+     VALUES (?, ?, ?)`
+  ).run(
     icao24,
     callsign,
     Date.now()
   );
 
-  db.prepare("INSERT OR IGNORE INTO user_flights (user_id, flight_id) VALUES (?, ?)").run(userId, icao24);
+  // 4) Récupère l'ID interne du vol fraîchement inséré ou existant
+  const { id: flightId } = db
+    .prepare(`SELECT id FROM flights WHERE icao24 = ?`)
+    .get(icao24);
+
+  // 5) Lie l'utilisateur et le vol dans user_flights
+  db.prepare(
+    `INSERT OR IGNORE INTO user_flights (user_id, flight_id)
+     VALUES (?, ?)`
+  ).run(
+    userId,
+    flightId
+  );
+
+  // 6) Renvoie une confirmation au client
   ctx.response.body = { message: "Ajouté aux favoris." };
 });
 
