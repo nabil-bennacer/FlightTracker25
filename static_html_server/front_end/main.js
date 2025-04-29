@@ -13,6 +13,53 @@ const map = new ol.Map({
   })
 });
 
+const airportSource = new ol.source.Vector();
+const airportLayer  = new ol.layer.Vector({ source: airportSource });
+map.addLayer(airportLayer);
+
+// 2) style d’un aéroport
+function airportStyle() {
+  return new ol.style.Style({
+    image: new ol.style.Icon({
+      src: "tower-icon.png",
+      scale: 0.05,
+    }),
+  });
+}
+
+// 3) charger les aéroports depuis le back
+async function loadAirports() {
+  const res = await fetch(`${API_BASE}/airports`);
+  if (!res.ok) return console.error("Échec load airports");
+  const airports = await res.json(); 
+  airports.forEach(ap => {
+    const feat = new ol.Feature({
+      geometry: new ol.geom.Point(
+        ol.proj.fromLonLat([ap.longitude, ap.latitude])
+      ),
+      props: ap
+    });
+    feat.setStyle(airportStyle());
+    airportSource.addFeature(feat);
+  });
+}
+
+// 4) popup sur clic
+map.on("singleclick", evt => {
+  map.forEachFeatureAtPixel(evt.pixel, feat => {
+    const p = feat.get("props");
+    if (p && p.icao) {
+      const coord = feat.getGeometry().getCoordinates();
+      const html = `
+        <strong>${p.name} (${p.icao})</strong><br>
+        ${p.city}, ${p.country}
+      `;
+      document.getElementById("popup-content").innerHTML = html;
+      popup.setPosition(coord);
+    }
+  });
+});
+
 const aircraftFeatures = {};
 const vectorSource = new ol.source.Vector();
 const vectorLayer = new ol.layer.Vector({ source: vectorSource });

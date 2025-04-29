@@ -69,6 +69,16 @@ db.exec(`
     timestamp INTEGER,
     FOREIGN KEY(user_id) REFERENCES users(id)
   );
+  CREATE TABLE IF NOT EXISTS airports (
+  id          INTEGER PRIMARY KEY,
+  icao        TEXT UNIQUE,
+  iata        TEXT,
+  name        TEXT,
+  city        TEXT,
+  country     TEXT,
+  latitude    REAL,
+  longitude   REAL
+  );
 `);
 
 const router = new Router();
@@ -190,6 +200,14 @@ router.delete("/favorites/:icao24", authMiddleware, (ctx) => {
   ctx.response.body = { message: "Favori supprimé" };
 });
 
+router.get("/airports", (ctx) => {
+  const rows = db.prepare(`
+    SELECT icao, name, city, country, latitude, longitude
+    FROM airports
+  `).all();
+  ctx.response.body = rows;
+});
+
 
 router.get("/api/flights", (ctx) => {
   const flights = db.prepare("SELECT * FROM flights").all();
@@ -235,20 +253,6 @@ router.get("/details/:callsign", async (ctx) => {
     }
 
    
-    router.get("/favorites", authMiddleware, (ctx) => {
-      const userId = ctx.state.user.id;
-    
-      const rows = db.prepare(`
-        SELECT f.icao24, f.callsign
-          FROM flights f
-          JOIN user_flights uf
-            ON f.id = uf.flight_id      
-         WHERE uf.user_id = ?
-      `).all(userId);
-      
-    
-      ctx.response.body = rows;
-    });
     
     const parseTime = (v: string | undefined): number | null =>
       v ? Date.parse(v) / 1000 : null;
@@ -340,14 +344,6 @@ router.post("/favorites", authMiddleware, async (ctx: Context) => {
   ctx.response.body = { message: "Ajouté aux favoris." };
 });
 
-// Supprimer un favori
-router.delete("/favorites/:id", authMiddleware, (ctx) => {
-  const userId = ctx.state.user.id;
-  const flightId = ctx.params.id;
-
-  db.prepare("DELETE FROM user_flights WHERE user_id = ? AND flight_id = ?").run(userId, flightId);
-  ctx.response.body = { message: "Favori supprimé" };
-});
 
 
 const connectedSockets = new Set<WebSocket>();
