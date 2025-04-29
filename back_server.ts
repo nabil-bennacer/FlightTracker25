@@ -19,7 +19,7 @@ const key = await Deno.readTextFile("./certs/key.key");
 const RAPID_KEY = Deno.env.get("RAPIDAPI_KEY")!;
 const AEROBOX_HOST = "aerodatabox.p.rapidapi.com";
 
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 heures
+const CACHE_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 jours
 const flightCache = new Map<string, { data: any; timestamp: number }>();
 
 const db = new Database("flighttracker.db");
@@ -173,11 +173,21 @@ router.post("/logout", (ctx) => {
   ctx.response.body = { message: "Déconnecté" };
 });
 
-router.delete("/delete-account", authMiddleware, (ctx) => {
-  const userId = ctx.state.user.id;
-  db.prepare("DELETE FROM users WHERE id = ?").run(userId);
-  ctx.cookies.delete("token", { path: "/" });
-  ctx.response.body = { message: "Compte supprimé" };
+// on reçoit ctx.params.icao24, on récupère l'id réel avant de supprimer
+router.delete("/favorites/:icao24", authMiddleware, (ctx) => {
+  const userId  = ctx.state.user.id;
+  const icao24  = ctx.params.icao24;
+
+  // 1) Cherche l'id interne du vol correspondant à cet icao24
+  const row = db.prepare("SELECT id FROM flights WHERE icao24 = ?")
+                .get(icao24);
+  if (row) {
+    // 2) Supprime la liaison user_flights
+    db.prepare("DELETE FROM user_flights WHERE user_id = ? AND flight_id = ?")
+      .run(userId, row.id);
+  }
+
+  ctx.response.body = { message: "Favori supprimé" };
 });
 
 

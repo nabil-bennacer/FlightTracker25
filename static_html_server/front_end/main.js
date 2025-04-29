@@ -49,6 +49,52 @@ function visibleStyle(heading) {
   });
 }
 
+// ➡️ Fonction de chargement global des favoris
+async function loadFavorites() {
+  const sec = document.getElementById("favoritesSection");
+  const ul  = document.getElementById("favoritesList");
+  sec.style.display = "block";
+
+  const res = await fetch(`${API_BASE}/favorites`, {
+    credentials: "include"
+  });
+  if (!res.ok) return console.error("Impossible de charger les favoris");
+
+  const favs = await res.json(); // [{icao24, callsign}, ...]
+  ul.innerHTML = "";
+
+  favs.forEach(flight => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      ${flight.callsign || flight.icao24}
+      <button style="margin-left:10px;">❌</button>
+    `;
+
+    // recentrer sur l’avion au clic sur le texte
+    li.firstChild.addEventListener("click", () => {
+      const feat = aircraftFeatures[flight.icao24];
+      if (!feat) return alert("Vol non détecté.");
+      const coord = feat.getGeometry().getCoordinates();
+      map.getView().animate({ center: coord, zoom: 8 });
+      feat.onClick?.(coord);
+    });
+
+    // suppression du favori
+    li.querySelector("button").addEventListener("click", async e => {
+      e.stopPropagation();
+      if (!confirm("Supprimer ce vol de vos favoris ?")) return;
+      const del = await fetch(
+        `${API_BASE}/favorites/${flight.icao24}`,
+        { method: "DELETE", credentials: "include" }
+      );
+      if (del.ok) li.remove();
+      else alert("Erreur lors de la suppression.");
+    });
+
+    ul.appendChild(li);
+  });
+}
+
 const ws = new WebSocket("wss://localhost:3000/ws");
 
 ws.onopen = () => console.log("🟢 WebSocket connecté à /ws");
@@ -105,7 +151,7 @@ ws.onmessage = async (event) => {
             📍 Lon : ${lon}<br>
             ✈️ Altitude : ${plane.geo_altitude ? (plane.geo_altitude * 3.28084).toFixed(0) + " ft" : "N/D"}<br>
             🎯 Cap : ${heading}`;
-        } catch (err) {
+        } catch {
           content += `Erreur lors du chargement des détails.<br>📍 Lat : ${lat}<br>📍 Lon : ${lon}<br>🎯 Cap : ${heading}`;
         }
       }
@@ -124,6 +170,7 @@ ws.onmessage = async (event) => {
             });
             if (res.ok) {
               alert("✅ Vol ajouté aux favoris !");
+              loadFavorites(); // Recharger les favoris
             } else {
               alert("❌ Erreur lors de l’ajout du favori.");
             }
@@ -146,7 +193,7 @@ ws.onerror = (err) => console.error("Erreur WebSocket:", err);
 
 window.addEventListener("DOMContentLoaded", async () => {
   try {
-    const res = await fetch(`${API_BASE}/auth/me`, { credentials: "include" });
+    const res  = await fetch(`${API_BASE}/auth/me`, { credentials: "include" });
     const menu = document.getElementById("authOptions");
 
     if (res.ok) {
@@ -191,44 +238,9 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
       });
 
-      // ⭐ Afficher la section des favoris
-      document.getElementById("favoritesSection").style.display = "block";
-      const favList = document.getElementById("favoritesList");
+      // ➡️ Charger les favoris au démarrage
+      loadFavorites();
 
-      const favRes = await fetch(`${API_BASE}/favorites`, { credentials: "include" });
-      const favs = await favRes.json();
-
-      favList.innerHTML = "";
-      favs.forEach((flight) => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-          ${flight.callsign || flight.icao24}
-          <button style="margin-left: 10px;">❌</button>
-        `;
-        li.firstChild.addEventListener("click", () => {
-          const f = aircraftFeatures[flight.icao24];
-          if (f) {
-            const coord = f.getGeometry().getCoordinates();
-            map.getView().animate({ center: coord, zoom: 8 });
-            f.onClick?.(coord);
-          } else {
-            alert("Vol non détecté actuellement.");
-          }
-        });
-        li.querySelector("button").addEventListener("click", async (e) => {
-          e.stopPropagation();
-          if (confirm("Supprimer ce vol de vos favoris ?")) {
-            const res = await fetch(`${API_BASE}/favorites/${flight.icao24}`, {
-              method: "DELETE",
-              credentials: "include"
-            });
-            if (res.ok) li.remove();
-            else alert("Erreur lors de la suppression.");
-          }
-        });
-        favList.appendChild(li);
-      });
-      
     } else {
       menu.innerHTML = `
         <a href="login.html">Se connecter</a>
