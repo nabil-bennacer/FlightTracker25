@@ -119,6 +119,30 @@ async function authMiddleware(ctx: Context, next: () => Promise<void>) {
   await next();    // seul next est en dehors du try/catch
 }
 
+let amadeusToken: string | null = null;
+let tokenExpiresAt = 0;
+
+async function getAmadeusToken(): Promise<string | null> {
+  const now = Date.now();
+  if (amadeusToken && now < tokenExpiresAt) return amadeusToken;
+
+  const res = await fetch("https://test.api.amadeus.com/v1/security/oauth2/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type:    "client_credentials",
+      client_id:     Deno.env.get("AMADEUS_CLIENT_ID")!,
+      client_secret: Deno.env.get("AMADEUS_CLIENT_SECRET")!
+    })
+  });
+  if (!res.ok) throw new Error("Échec génération token Amadeus");
+  const json = await res.json();
+  console.log("✅ Token Amadeus obtenu :", json.access_token);
+  amadeusToken   = json.access_token;
+  tokenExpiresAt = now + json.expires_in * 1000 - 60_000;
+  return amadeusToken;
+}
+
 
 router.post("/register", async (ctx) => {
   const body = await ctx.request.body.json();
@@ -275,8 +299,11 @@ router.get("/details/:callsign", async (ctx) => {
       ),
     };
     
+    const depIata      = flight.departure?.airport?.iataCode || "";
+    const arrIata      = flight.arrival?.airport?.iataCode   || "";
+    const depDate      = new Date(flight.departure?.scheduledTime?.utc).toISOString().slice(0,10);
+    Object.assign(result, { depIata, arrIata, depDate });
     
-
     flightCache.set(callsign, { data: result, timestamp: now });
     ctx.response.body = result;
   } catch (e) {
@@ -287,6 +314,38 @@ router.get("/details/:callsign", async (ctx) => {
     ctx.response.body = { error: "Erreur serveur", details: e.message };
   }
 });
+
+router.get("/prices/:from/:to/:date", async (ctx) => {
+  const { from, to, date } = ctx.params;
+  if (!from || !to || !date) ctx.throw(400, "Paramètres manquants");
+
+  const token = await getAmadeusToken();
+  const url   = new URL("https://test.api.amadeus.com/v2/shopping/flight-offers");
+  url.searchParams.set("originLocationCode",      from);
+  url.searchParams.set("destinationLocationCode", to);
+  url.searchParams.set("departureDate",            date);
+  url.searchParams.set("adults",                   "1");
+
+
+  const res = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) ctx.throw(res.status, "Erreur API Amadeus");
+
+  const { data } = await res.json();
+  
+  if (!data?.length) {
+    ctx.response.body = { min: null, max: null, currency: null };
+    return;
+  }
+  const price = data[0].price;
+  ctx.response.body = {
+    min:      price.total,
+    max:      price.total, // adapte si tu veux un intervalle
+    currency: price.currency
+  };
+});
+
 
 // Partie qui gère les vols favoris
 // Obtenir les favoris

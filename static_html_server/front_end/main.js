@@ -175,6 +175,19 @@ ws.onmessage = async (event) => {
     feature.onClick = async (coordinate) => {
       let content = `<strong>Vol : ${callsign || icao24}</strong><br>`;
 
+      try {
+        const res = await fetch(`https://api.planespotters.net/pub/photos/hex/${icao24}`);
+        if (res.ok) {
+          const json = await res.json();
+          const img = json.photos?.[0]?.thumbnail_large.src;
+          if (img) {
+            content = `<img src="${img}" alt="Avion ${callsign}" style="width: 100%; border-radius: 6px; margin-bottom: 10px;">` + content;
+          }
+        }
+      } catch (err) {
+        console.warn("Erreur récupération photo :", err);
+      }
+
       const isLoggedIn = document.getElementById("authOptions")?.textContent?.includes("Déconnexion");
       if (isLoggedIn) {
         content += `<button id="fav-${icao24}" style="margin-top: 5px; background-color: gold; border: none; padding: 5px 8px; cursor: pointer; border-radius: 4px;">⭐ Ajouter aux favoris</button>`;
@@ -186,6 +199,27 @@ ws.onmessage = async (event) => {
         try {
           const res = await fetch(`${API_BASE}/details/${callsign.trim().replace(/\s+/g, "")}`);
           const data = await res.json();
+          content += `<div id="price-section">💶 Prix : Chargement…</div>`;
+          document.getElementById("popup-content").innerHTML = content;
+          popup.setPosition(coordinate);
+
+          if (data.depIata && data.arrIata && data.depDate) {
+            try {
+              const pr = await fetch(
+                `${API_BASE}/prices/${data.depIata}/${data.arrIata}/${data.depDate}`,
+                { credentials: "include" }
+              );
+              if (pr.ok) {
+                const { min, currency } = await pr.json();
+                const txt = min == null ? "N/D" : `${min} ${currency}`;
+                document.getElementById("price-section").textContent = `💶 Prix : ${txt}`;
+              } else {
+                document.getElementById("price-section").textContent = "💶 Prix : Erreur";
+              }
+            } catch {
+              document.getElementById("price-section").textContent = "💶 Prix : N/D";
+            }
+          }
           content += `
             Compagnie : ${data.airline || "N/D"}<br>
             Modèle : ${data.model || "N/D"}<br><br>
