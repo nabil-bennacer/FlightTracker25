@@ -26,6 +26,7 @@ function airportStyle() {
     }),
   });
 }
+loadAirports(); // charger les aéroports au démarrage
 
 // 3) charger les aéroports depuis le back
 async function loadAirports() {
