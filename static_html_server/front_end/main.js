@@ -22,7 +22,7 @@ function airportStyle() {
   return new ol.style.Style({
     image: new ol.style.Icon({
       src: "tower-icon.png",
-      scale: 0.05,
+      scale: 0.03,
     }),
   });
 }

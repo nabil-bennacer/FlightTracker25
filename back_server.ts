@@ -299,15 +299,15 @@ router.get("/details/:callsign", async (ctx) => {
       ),
     };
     
-    const depIata      = flight.departure?.airport?.iataCode || "";
-    const arrIata      = flight.arrival?.airport?.iataCode   || "";
-    const depDate      = new Date(flight.departure?.scheduledTime?.utc).toISOString().slice(0,10);
+    const depIata = flight.departure?.airport?.iata || "";
+    const arrIata = flight.arrival?.airport?.iata || "";
+    const depDate = new Date(flight.departure?.scheduledTime?.utc).toISOString().slice(0,10);
     Object.assign(result, { depIata, arrIata, depDate });
     
     flightCache.set(callsign, { data: result, timestamp: now });
     ctx.response.body = result;
   } catch (e) {
-    ctx.response.status = 500;state.user.id;
+    ctx.response.status = 500;
 
     // 2) Parse le body JSON pour en extraire icao24 et callsign
     const { icao24, callsign } = await ctx.request.body({ type: "json" }).value;
