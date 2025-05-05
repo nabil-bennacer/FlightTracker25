@@ -70,14 +70,14 @@ db.exec(`
     FOREIGN KEY(user_id) REFERENCES users(id)
   );
   CREATE TABLE IF NOT EXISTS airports (
-  id          INTEGER PRIMARY KEY,
-  icao        TEXT UNIQUE,
-  iata        TEXT,
-  name        TEXT,
-  city        TEXT,
-  country     TEXT,
-  latitude    REAL,
-  longitude   REAL
+    id          INTEGER PRIMARY KEY,
+    icao        TEXT UNIQUE,
+    iata        TEXT,
+    name        TEXT,
+    city        TEXT,
+    country     TEXT,
+    latitude    REAL,
+    longitude   REAL
   );
 `);
 
@@ -87,7 +87,6 @@ router.get("/test-key", (ctx) => {
   const key = Deno.env.get("RAPIDAPI_KEY");
   ctx.response.body = { key: key || "❌ Aucune clé trouvée" };
 });
-
 
 async function generateJWT(payload: Record<string, unknown>) {
   const header = { alg: "HS512", typ: "JWT" };
@@ -99,33 +98,37 @@ async function authMiddleware(ctx: Context, next: () => Promise<void>) {
     ctx.response.status = 204;
     return;
   }
-
   const token = await ctx.cookies.get("token");
   if (!token) {
     ctx.response.status = 401;
     return;
   }
-
   let payload;
   try {
-    // passe bien ton algorithme ici si besoin
     payload = await verify(token, JWT_SECRET, "HS512");
-  } catch (err) {
+  } catch {
     ctx.response.status = 401;
     return;
   }
-
   ctx.state.user = payload;
-  await next();    // seul next est en dehors du try/catch
+  await next();
+}
+
+async function adminMiddleware(ctx: Context, next: () => Promise<void>) {
+  if (ctx.state.user.role !== "admin") {
+    ctx.response.status = 403;
+    ctx.response.body = { error: "Accès refusé : admin only" };
+    return;
+  }
+  await next();
 }
 
 let amadeusToken: string | null = null;
 let tokenExpiresAt = 0;
 
-async function getAmadeusToken(): Promise<string | null> {
+async function getAmadeusToken(): Promise<string> {
   const now = Date.now();
   if (amadeusToken && now < tokenExpiresAt) return amadeusToken;
-
   const res = await fetch("https://test.api.amadeus.com/v1/security/oauth2/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -140,9 +143,8 @@ async function getAmadeusToken(): Promise<string | null> {
   console.log("✅ Token Amadeus obtenu :", json.access_token);
   amadeusToken   = json.access_token;
   tokenExpiresAt = now + json.expires_in * 1000 - 60_000;
-  return amadeusToken;
+  return amadeusToken!;
 }
-
 
 router.post("/register", async (ctx) => {
   const body = await ctx.request.body.json();
@@ -153,7 +155,7 @@ router.post("/register", async (ctx) => {
     ctx.response.status = 201;
     ctx.response.body = { message: "Inscription réussie" };
   } catch {
-    ctx.response.status = 400; 
+    ctx.response.status = 400;
     ctx.response.body = { error: "Utilisateur déjà existant" };
   }
 });
@@ -161,51 +163,87 @@ router.post("/register", async (ctx) => {
 router.post("/login", async (ctx) => {
   const body = await ctx.request.body.json();
   const { username, password } = body;
-
   if (!username || !password) {
     ctx.response.status = 400;
     ctx.response.body = { error: "Données manquantes" };
     return;
   }
-
   const row = db.prepare("SELECT id, password_hash, role FROM users WHERE username = ?").get(username);
-
   if (!row || !(await bcrypt.compare(password, row.password_hash))) {
     ctx.response.status = 401;
     ctx.response.body = { error: "Identifiants invalides" };
     return;
   }
-
-  if (!username || !row.id || !row.role) {
-    ctx.response.status = 500;
-    ctx.response.body = { error: "Échec génération JWT (données manquantes)" };
-    return;
-  }
-
-
   const token = await generateJWT({
     id: row.id,
-    username: username,
+    username,
     role: row.role,
     exp: getNumericDate(60 * 60),
   });
-
   await ctx.cookies.set("token", token, {
     httpOnly: true, secure: true, sameSite: "strict", path: "/", maxAge: 3600,
   });
-
   ctx.response.body = { message: "Connexion réussie" };
 });
 
-
 router.get("/auth/me", authMiddleware, (ctx) => {
-  ctx.response.body = { username: ctx.state.user.username };
+  ctx.response.body = {
+    username: ctx.state.user.username,
+    role:     ctx.state.user.role
+  };
 });
 
 router.post("/logout", (ctx) => {
   ctx.cookies.delete("token", { path: "/" });
   ctx.response.body = { message: "Déconnecté" };
 });
+
+router.delete("/delete-account", authMiddleware, async (ctx) => {
+  const { id, role } = ctx.state.user as { id: number; role: string };
+  if (role === "admin") {
+    ctx.response.status = 403;
+    ctx.response.body   = { error: "Un administrateur ne peut pas se supprimer." };
+    return;
+  }
+  db.prepare("DELETE FROM users WHERE id = ?").run(id);
+  db.prepare("DELETE FROM user_flights WHERE user_id = ?").run(id);
+  db.prepare("DELETE FROM logs WHERE user_id = ?").run(id);
+  ctx.cookies.delete("token", { path: "/" });
+  ctx.response.body = { message: "Compte supprimé avec succès." };
+});
+
+// Enregistrement des clics de vol
+router.post("/logs", authMiddleware, async (ctx) => {
+  const userId    = ctx.state.user.id;
+  const { action } = await ctx.request.body({ type: "json" }).value;
+  db.prepare("INSERT INTO logs (user_id, action, timestamp) VALUES (?, ?, ?)")
+    .run(userId, action, Date.now());
+  ctx.response.body = { message: "Log ajouté" };
+});
+
+// Route Admin : liste des users, leurs clics et favoris
+router.get("/admin/users", authMiddleware, adminMiddleware, (ctx) => {
+  const users = db.prepare("SELECT id, username FROM users").all();
+  const data = users.map((u: any) => {
+    const consulted = db
+      .prepare("SELECT action FROM logs WHERE user_id = ? ORDER BY timestamp DESC")
+      .all(u.id)
+      .map((r: any) => r.action);
+    const favorites = db
+      .prepare(`
+        SELECT f.callsign
+          FROM user_flights uf
+          JOIN flights f ON f.id = uf.flight_id
+         WHERE uf.user_id = ?
+      `)
+      .all(u.id)
+      .map((r: any) => r.callsign);
+    return { username: u.username, consulted, favorites };
+  });
+  ctx.response.body = data;
+});
+
+
 
 // on reçoit ctx.params.icao24, on récupère l'id réel avant de supprimer
 router.delete("/favorites/:icao24", authMiddleware, (ctx) => {
