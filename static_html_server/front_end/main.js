@@ -22,7 +22,7 @@ function airportStyle() {
   return new ol.style.Style({
     image: new ol.style.Icon({
       src: "tower-icon.png",
-      scale: 0.03,
+      scale: 0.025,
     }),
   });
 }
@@ -90,7 +90,7 @@ function visibleStyle(heading) {
   return new ol.style.Style({
     image: new ol.style.Icon({
       src: "plane-icon.png",
-      scale: 0.05,
+      scale: 0.035,
       rotation: (heading || 0) * Math.PI / 180,
       rotateWithView: true,
     }),
@@ -284,7 +284,14 @@ window.addEventListener("DOMContentLoaded", async () => {
         <span style="padding: 12px 16px; font-weight: bold;">Bonjour, ${data.username}</span>
         <a href="#" id="logoutLink">Déconnexion</a>
         <button id="deleteBtn" class="confirm-delete">Supprimer mon compte</button>
+         ${data.role === "admin" 
+      ? `<a href="admin.html" id="adminLink">Administration</a>` 
+      : ``}
+        
       `;
+
+    
+
 
       document.getElementById("logoutLink").addEventListener("click", async (e) => {
         e.preventDefault();

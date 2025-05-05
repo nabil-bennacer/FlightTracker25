@@ -233,6 +233,37 @@ html, body {
 	padding: 3px 6px;
 	font-size: 0.85em;
   }
+
+  /* Admin page */
+.admin-container {
+	padding: 20px;
+	max-width: 900px;
+	margin: 100px auto 40px auto;
+	background: rgba(255,255,255,0.95);
+	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .admin-container h2 {
+	margin-top: 0;
+	color: #333;
+  }
+  #usersTable {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 20px;
+  }
+  #usersTable th,
+  #usersTable td {
+	padding: 10px;
+	border: 1px solid #ccc;
+  }
+  #usersTable th {
+	background-color: #1976d2;
+	color: white;
+  }
+  #usersTable tr:nth-child(even) {
+	background-color: #f9f9f9;
+  }
   
   
   

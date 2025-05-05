@@ -1,21 +1,36 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <title>Administration - FlightTracker</title>
-  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>…</header>
-  <div class="admin-container">
-    <h2>Section Administration</h2>
+  <header>
+    <h1>Section Administration</h1>
+    <div id="userMenu" class="dropdown">
+      <button class="dropbtn">☰</button>
+      <div class="dropdown-content" id="authOptions">
+        <!-- Menu injecté par admin.js -->
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-container">
+    <button onclick="window.location.href='index.html'" class="secondary-button">← Retour</button>
+    <h2>Gestion des utilisateurs</h2>
     <table id="usersTable">
       <thead>
-        <tr><th>Utilisateur</th><th>Vols consultés</th><th>Favoris</th></tr>
+        <tr>
+          <th>Utilisateur</th>
+          <th>Vols consultés</th>
+          <th>Favoris</th>
+        </tr>
       </thead>
       <tbody></tbody>
     </table>
-  </div>
+  </main>
+
   <script src="admin.js"></script>
 </body>
 </html>
