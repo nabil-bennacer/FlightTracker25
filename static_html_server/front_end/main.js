@@ -190,6 +190,14 @@ ws.onmessage = async (event) => {
 
       const isLoggedIn = document.getElementById("authOptions")?.textContent?.includes("Déconnexion");
       if (isLoggedIn) {
+        fetch(`${API_BASE}/logs`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: callsign || icao24 })
+        }).catch(console.warn);
+      }
+      if (isLoggedIn) {
         content += `<button id="fav-${icao24}" style="margin-top: 5px; background-color: gold; border: none; padding: 5px 8px; cursor: pointer; border-radius: 4px;">⭐ Ajouter aux favoris</button>`;
       }
 

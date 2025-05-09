@@ -215,7 +215,7 @@ router.delete("/delete-account", authMiddleware, async (ctx) => {
 // Enregistrement des clics de vol
 router.post("/logs", authMiddleware, async (ctx) => {
   const userId    = ctx.state.user.id;
-  const { action } = await ctx.request.body({ type: "json" }).value;
+  const { action } = await ctx.request.body.json();
   db.prepare("INSERT INTO logs (user_id, action, timestamp) VALUES (?, ?, ?)")
     .run(userId, action, Date.now());
   ctx.response.body = { message: "Log ajouté" };
