@@ -9,6 +9,15 @@
 <body>
   <header>
     <h1>FlightTracker</h1>
+    <div id="searchContainer">
+      <input
+        type="text"
+        id="flightSearch"
+        placeholder="🔍 Rechercher un vol (ex : AFR123)"
+        autocomplete="off"
+      />
+      <ul id="searchSuggestions" class="suggestions"></ul>
+    </div>
     <div id="userMenu" class="dropdown">
       <button class="dropbtn">☰</button>
       <div class="dropdown-content" id="authOptions">
@@ -19,23 +28,29 @@
     </div>
   </header>
 
-  <div id="searchBar" style="display:none; padding: 10px; position: absolute; top: 80px; left: 20px; z-index: 20;">
-    <input type="text" id="flightSearch" placeholder="🔍 Rechercher un vol (ex: AFR123)" style="padding: 6px; width: 250px; border-radius: 4px; border: 1px solid #ccc;" />
-  </div>
-
-  <div id="favoritesSection" style="display:none; position: absolute; top: 130px; left: 20px; z-index: 20; background: white; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+  <div id="favoritesSection" style="display:none; position:absolute; top:130px; left:20px; z-index:20;">
     <h3>⭐ Mes favoris</h3>
-    <ul id="favoritesList" style="margin: 0; padding-left: 20px;"></ul>
+    <ul id="favoritesList"></ul>
   </div>
 
   <div id="map"></div>
-
+  
   <div id="popup" class="ol-popup">
-    <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+    <a href="#" id="popup-closer">✖</a>
     <div id="popup-content"></div>
   </div>
 
+  <!-- Panneau latéral de détails -->
+  <aside id="sidePanel" class="side-panel">
+    <button id="sidePanelClose" class="popup-close">✖</button>
+    <div class="popup-image"></div>
+    <div class="popup-header"></div>
+    <div id="sidePanelContent" class="popup-body"></div>
+    <div class="popup-footer"></div>
+  </aside>
+
   <script src="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.js"></script>
   <script src="main.js"></script>
+  <script src="search.js"></script>
 </body>
 </html>

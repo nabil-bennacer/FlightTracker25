@@ -1,39 +1,34 @@
-/* Import a clean, modern font */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+/* style.css */
 
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 :root {
-  /* Color palette */
-  --primary-color: #1976d2;
+  --primary: #1976d2;
   --primary-light: #63a4ff;
-  --secondary-color: #555;
+  --secondary: #555;
   --bg-light: #f9f9f9;
-  --bg-white: #ffffff;
-  --text-color: #333333;
-  --border-color: #e0e0e0;
-  
-  /* Spacing scale */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
-  
-  /* Border radius */
+  --bg-white: #fff;
+  --text: #333;
+  --border: #e0e0e0;
   --radius-sm: 4px;
   --radius-md: 8px;
-  --radius-lg: 12px;
+  --space-sm: 8px;
+  --space-md: 16px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html, body {
-  margin: 0;
-  padding: 0;
   height: 100%;
-  font-family: 'Roboto', Arial, sans-serif;
-  color: var(--text-color);
-  background-color: var(--bg-light);
+  font-family: 'Roboto', sans-serif;
+  color: var(--text);
+  background: var(--bg-light);
 }
 
-/* Fullscreen map container */
+/* Fullscreen Map */
 #map {
   position: absolute;
   top: 0;
@@ -43,281 +38,269 @@ html, body {
   z-index: 0;
 }
 
-/* Header with blur backdrop */
+/* Header */
 header {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  z-index: 10;
-  padding: var(--space-md) 0;
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(10px);
-  text-align: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-header h1 {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 500;
-  color: var(--primary-color);
-}
-
-#userInfo {
-  margin-top: var(--space-xs);
-  font-size: 0.9rem;
-}
-
-#userInfo a {
-  color: var(--primary-color);
-  text-decoration: none;
-  margin: 0 var(--space-sm);
-}
-
-#userInfo a:hover {
-  text-decoration: underline;
-}
-
-/* Popup styling (OpenLayers) */
-.ol-popup {
-  position: absolute;
-  background-color: var(--bg-white);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  right: 0;
   padding: var(--space-md);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-color);
-  bottom: 12px;
-  left: -50px;
-  min-width: 300px;
-  z-index: 20;
-}
-
-.ol-popup:before,
-.ol-popup:after {
-  content: "";
-  position: absolute;
-  pointer-events: none;
-}
-
-.ol-popup:before {
-  border: 12px solid transparent;
-  border-bottom-color: var(--border-color);
-  top: -24px;
-  left: calc(50% - 12px);
-}
-
-.ol-popup:after {
-  border: 10px solid transparent;
-  border-bottom-color: var(--bg-white);
-  top: -20px;
-  left: calc(50% - 10px);
-}
-
-.ol-popup-closer {
-  position: absolute;
-  top: var(--space-xs);
-  right: var(--space-xs);
-  text-decoration: none;
-  font-size: 1.2rem;
-  color: var(--secondary-color);
-}
-
-.ol-popup-closer:hover {
-  color: var(--primary-color);
-}
-
-/* Forms (login/register) */
-form {
-  background: var(--bg-white);
-  padding: var(--space-lg);
-  border-radius: var(--radius-md);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  max-width: 400px;
-  width: 90%;
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(6px);
   display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  margin: 100px auto var(--space-lg) auto;
-  position: relative;
-  z-index: 100;
-}
-
-form input[type="text"],
-form input[type="email"],
-form input[type="password"] {
-  padding: var(--space-md);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  font-size: 1rem;
-}
-
-form button,
-button.secondary-button {
-  padding: var(--space-md);
-  background-color: var(--primary-color);
-  color: var(--bg-white);
-  border: none;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: background-color 0.3s ease;
-}
-
-form button:hover,
-button.secondary-button:hover {
-  background-color: var(--primary-light);
-}
-
-label {
-  font-weight: 500;
-  color: var(--secondary-color);
-}
-
-/* Dropdown menu */
-.dropdown {
-  position: absolute;
-  top: var(--space-lg);
-  right: var(--space-lg);
+  align-items: center;
   z-index: 20;
 }
-
-.dropbtn {
-  background-color: var(--primary-color);
-  color: var(--bg-white);
-  padding: var(--space-sm) var(--space-md);
-  font-size: 1rem;
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+header h1 {
+  font-size: 1.5rem;
+  color: var(--primary);
+  margin-right: auto;
 }
 
+/* Search Bar */
+#searchContainer {
+  position: relative;
+  width: 300px;
+  margin-right: var(--space-md);
+}
+#flightSearch {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+}
+.suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-top: none;
+  max-height: 200px;
+  overflow-y: auto;
+  list-style: none;
+  z-index: 30;
+}
+.suggestions li {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.suggestions li:hover {
+  background: var(--primary);
+  color: var(--bg-white);
+}
+
+/* Dropdown User Menu */
+.dropdown { position: relative; }
+.dropbtn {
+  background: var(--primary);
+  color: var(--bg-white);
+  border: none;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
 .dropdown-content {
   display: none;
   position: absolute;
   right: 0;
-  background-color: var(--bg-white);
-  min-width: 180px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  background: var(--bg-white);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 30;
 }
-
 .dropdown-content a,
 .dropdown-content button {
-  color: var(--text-color);
-  padding: var(--space-sm) var(--space-md);
-  text-decoration: none;
   display: block;
-  background: var(--bg-white);
+  padding: 8px 12px;
+  text-decoration: none;
+  color: var(--text);
   border: none;
-  text-align: left;
+  background: none;
   width: 100%;
-  font-size: 0.95rem;
+  text-align: left;
 }
-
 .dropdown-content a:hover,
 .dropdown-content button:hover {
-  background-color: var(--bg-light);
+  background: var(--bg-light);
 }
+.dropdown:hover .dropdown-content { display: block; }
 
-.dropdown:hover .dropdown-content {
-  display: block;
-}
-
-.confirm-delete {
-  background-color: #d32f2f;
-  color: var(--bg-white);
-  font-weight: 500;
-}
-
-#searchBar input {
-  padding: var(--space-sm);
-  width: 250px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-color);
-  font-size: 1rem;
-}
-
+/* Favorites Section */
 #favoritesSection {
-  background-color: var(--bg-white);
-  padding: var(--space-md);
+  position: absolute;
+  top: 130px;
+  left: 20px;
+  z-index: 20;
+  background: var(--bg-white);
+  padding: var(--space-sm);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   max-height: 300px;
   overflow-y: auto;
 }
-
 #favoritesSection h3 {
-  margin: 0 0 var(--space-xs) 0;
+  margin-bottom: var(--space-sm);
   font-size: 1.1rem;
-  font-weight: 500;
-  color: var(--primary-color);
 }
-
 #favoritesList li {
   margin-bottom: var(--space-sm);
-  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+#favoritesList button {
+  background: crimson;
+  color: var(--bg-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: 0.85rem;
   cursor: pointer;
 }
 
-#favoritesList button {
-  margin-left: var(--space-sm);
-  background-color: #d32f2f;
+/* OL Popup for Airports */
+.ol-popup {
+  position: absolute;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  bottom: 12px;
+  left: -50px;
+  min-width: 200px;
+  z-index: 20;
+}
+.ol-popup-closer {
+  position: absolute;
+  top: 2px;
+  right: 8px;
+  cursor: pointer;
+  color: #666;
+}
+.ol-popup-closer:hover { color: #000; }
+
+/* Side Panel for Flights */
+.side-panel {
+  display: none;
+  position: absolute;
+  top: 60px;
+  right: 0;
+  bottom: 0;
+  width: 350px;
+  background: var(--bg-white);
+  box-shadow: -4px 0 16px rgba(0,0,0,0.2);
+  overflow-y: auto;
+  z-index: 25;
+}
+.popup-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #666;
+}
+.popup-close:hover { color: #000; }
+.popup-image img {
+  width: 100%;
+  object-fit: cover;
+  border-bottom: 1px solid var(--border);
+}
+.popup-header {
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--border);
+}
+.popup-header .flight-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.popup-header .flight-sublabel {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--secondary);
+  margin-top: 4px;
+}
+.popup-body {
+  padding: var(--space-md);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.popup-body .section { margin-bottom: var(--space-md); }
+.popup-body .section h4 {
+  margin-bottom: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--primary);
+}
+.popup-footer {
+  display: flex;
+  border-top: 1px solid var(--border);
+}
+.popup-footer .btn {
+  flex: 1;
+  padding: 8px 0;
+  background: none;
+ 	border: none;
+ 	cursor: pointer;
+ 	font-size: 0.85rem;
+ 	font-weight: 500;
+ 	color: var(--primary);
+ 	transition: background 0.2s;
+}
+.popup-footer .btn:hover { background: #f0f8ff; }
+
+/* Forms (Login/Register) */
+form {
+  background: var(--bg-white);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  max-width: 400px;
+  width: 90%;
+  margin: 80px auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+form label {
+  font-weight: 500;
+  color: var(--secondary);
+}
+form input[type="text"],
+form input[type="email"],
+form input[type="password"] {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+}
+form button {
+  padding: 10px;
+  background: var(--primary);
   color: var(--bg-white);
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  padding: var(--space-xs) var(--space-sm);
-  font-size: 0.85rem;
+  font-size: 1rem;
+}
+form button:hover {
+  background: var(--primary-light);
 }
 
-/* Admin page container */
-.admin-container {
-  padding: var(--space-lg);
-  max-width: 900px;
-  margin: 120px auto var(--space-lg) auto;
-  background: rgba(255,255,255,0.95);
-  border-radius: var(--radius-md);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.admin-container h2 {
-  margin-top: 0;
-  color: var(--primary-color);
-  font-weight: 500;
-}
-
-#usersTable {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: var(--space-md);
-}
-
-#usersTable th,
-#usersTable td {
-  padding: var(--space-sm) var(--space-md);
-  border: 1px solid var(--border-color);
-  text-align: left;
-}
-
-#usersTable th {
-  background-color: var(--primary-color);
+/* Utility Buttons */
+button.secondary-button {
+  background: var(--secondary);
   color: var(--bg-white);
-  font-weight: 500;
 }
-
-#usersTable tr:nth-child(even) {
-  background-color: var(--bg-light);
+button.confirm-delete {
+  background: #d32f2f;
+  color: var(--bg-white);
 }
-
-#usersTable .activity-item {
-	margin-bottom: var(--space-sm);
-  }
-  #usersTable td small {
-	color: var(--secondary-color);
-	font-size: 0.85rem;
-  }
-  

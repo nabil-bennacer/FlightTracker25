@@ -123,29 +123,6 @@ async function adminMiddleware(ctx: Context, next: () => Promise<void>) {
   await next();
 }
 
-let amadeusToken: string | null = null;
-let tokenExpiresAt = 0;
-
-async function getAmadeusToken(): Promise<string> {
-  const now = Date.now();
-  if (amadeusToken && now < tokenExpiresAt) return amadeusToken;
-  const res = await fetch("https://test.api.amadeus.com/v1/security/oauth2/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type:    "client_credentials",
-      client_id:     Deno.env.get("AMADEUS_CLIENT_ID")!,
-      client_secret: Deno.env.get("AMADEUS_CLIENT_SECRET")!
-    })
-  });
-  if (!res.ok) throw new Error("Échec génération token Amadeus");
-  const json = await res.json();
-  console.log("✅ Token Amadeus obtenu :", json.access_token);
-  amadeusToken   = json.access_token;
-  tokenExpiresAt = now + json.expires_in * 1000 - 60_000;
-  return amadeusToken!;
-}
-
 router.post("/register", async (ctx) => {
   const body = await ctx.request.body.json();
   const { username, email, password } = body;
@@ -347,42 +324,12 @@ router.get("/details/:callsign", async (ctx) => {
   } catch (e) {
     ctx.response.status = 500;
 
-    // 2) Parse le body JSON pour en extraire icao24 et callsign
-    const { icao24, callsign } = await ctx.request.body({ type: "json" }).value;
+    
     ctx.response.body = { error: "Erreur serveur", details: e.message };
   }
 });
 
-router.get("/prices/:from/:to/:date", async (ctx) => {
-  const { from, to, date } = ctx.params;
-  if (!from || !to || !date) ctx.throw(400, "Paramètres manquants");
 
-  const token = await getAmadeusToken();
-  const url   = new URL("https://test.api.amadeus.com/v2/shopping/flight-offers");
-  url.searchParams.set("originLocationCode",      from);
-  url.searchParams.set("destinationLocationCode", to);
-  url.searchParams.set("departureDate",            date);
-  url.searchParams.set("adults",                   "1");
-
-
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  if (!res.ok) ctx.throw(res.status, "Erreur API Amadeus");
-
-  const { data } = await res.json();
-  
-  if (!data?.length) {
-    ctx.response.body = { min: null, max: null, currency: null };
-    return;
-  }
-  const price = data[0].price;
-  ctx.response.body = {
-    min:      price.total,
-    max:      price.total, // adapte si tu veux un intervalle
-    currency: price.currency
-  };
-});
 
 
 // Partie qui gère les vols favoris
@@ -444,17 +391,42 @@ router.post("/favorites", authMiddleware, async (ctx: Context) => {
 
 
 const connectedSockets = new Set<WebSocket>();
+// ← cache global des derniers vols OpenSky
+let lastFlights: FlightData[] = [];
+
 router.get("/ws", async (ctx) => {
   if (!ctx.isUpgradable) ctx.throw(501);
+  
+  console.log("⚡ Nouvelle connexion WebSocket");
   const ws = ctx.upgrade();
   connectedSockets.add(ws);
 
-  // Envoie les avions immédiatement au nouveau client connecté
-  const flights = await fetchFromOpenSky();
-  ws.send(JSON.stringify(flights));
+  // Attente d'un délai court pour s'assurer que la connexion est établie
+  setTimeout(() => {
+    try {
+      if (ws.readyState === 1) { // OPEN = 1
+        const dataToSend = JSON.stringify(lastFlights);
+        console.log(`📤 Envoi de ${lastFlights.length} vols sur WebSocket`);
+        ws.send(dataToSend);
+      } else {
+        console.log(`⚠️ WebSocket pas prêt, état: ${ws.readyState}`);
+      }
+    } catch (e) {
+      console.error("❌ Erreur d'envoi WebSocket:", e);
+    }
+  }, 300); // Attendre 300ms pour être sûr
 
-  ws.onclose = () => connectedSockets.delete(ws);
+  ws.onclose = () => {
+    console.log("🔌 Déconnexion WebSocket");
+    connectedSockets.delete(ws);
+  };
+
+  ws.onerror = (e) => {
+    console.error("⛔ Erreur WebSocket:", e);
+    connectedSockets.delete(ws); // Supprimer les sockets en erreur
+  };
 });
+
 
 interface FlightData {
   icao24: string;
@@ -486,20 +458,32 @@ async function fetchFromOpenSky(): Promise<FlightData[]> {
 
 async function fetchAndBroadcastFlights() {
   const os = await fetchFromOpenSky();
+  console.log("✈️ Vols récupérés :", os.length);  // ← on affiche le nombre de vols
+  lastFlights = os;                     // ← on remplit le cache
   for (const ws of connectedSockets) {
-    ws.send(JSON.stringify(os));
+    try {
+      ws.send(JSON.stringify(os));
+    } catch (e) {
+      console.error("❌ Erreur d'envoi WebSocket:", e);
+      // Si la connexion est morte, on la retire
+      try { 
+        connectedSockets.delete(ws); 
+      } catch {}
+    }
   }
 }
 
-setInterval(fetchAndBroadcastFlights, 60000); // 1 minute
+
+setInterval(fetchAndBroadcastFlights, 240000); // toutes les 4 minutes
 fetchAndBroadcastFlights();
 
 const app = new Application();
 app.use(oakCors({
   origin: "https://localhost:8080",        
   credentials: true,                       
-  methods: ["GET","POST","DELETE","OPTIONS"],
+  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
   allowedHeaders: ["Content-Type","Cookie","Authorization"],
+  preflightContinue: false,
 }));
 
 // 2) Gestion explicite des préflight OPTIONS
@@ -508,6 +492,7 @@ app.use(async (ctx, next) => {
     ctx.response.status = 204;
     return;
   }
+  console.log(`${ctx.request.method} ${ctx.request.url.pathname}`);
   await next();
 });
 
