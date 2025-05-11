@@ -258,10 +258,13 @@ ws.onmessage = async evt => {
           ? selectedStyle(heading)
           : visibleStyle(heading)
       );
-      
-      feat.onClick = async (coordinate) => {
-  // 1) Titre du vol
-  let content = `<strong>Vol : ${callsign || icao24}</strong><br>`;
+        feat.onClick = async (coordinate) => {
+  setSelectedFeature(feat);
+  
+  // Préparer le contenu pour le panneau latéral
+  const headerContent = `<h3 class="flight-title">Vol : ${callsign || icao24}</h3>`;
+  let mainContent = '';
+  let imageContent = '';
 
   // 2) Photo depuis planespotters (optionnel)
   try {
@@ -270,13 +273,12 @@ ws.onmessage = async evt => {
       const json = await res.json();
       const img = json.photos?.[0]?.thumbnail_large?.src;
       if (img) {
-        content = `<img src="${img}" alt="Avion ${callsign}" style="width:100%;border-radius:6px;margin-bottom:10px;">` + content;
+        imageContent = `<img src="${img}" alt="Avion ${callsign}" style="width:100%;">`;
       }
     }
   } catch (err) {
     console.warn("Erreur récupération photo :", err);
   }
-
   // 3) Bouton "Ajouter aux favoris" si connecté
   const isLoggedIn = document.getElementById("authOptions")?.textContent?.includes("Déconnexion");
   if (isLoggedIn) {
@@ -287,39 +289,80 @@ ws.onmessage = async evt => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: callsign || icao24 })
     }).catch(console.warn);
-
-    content += `<button id="fav-${icao24}" style="margin-top:5px;background:gold;border:none;padding:5px 8px;cursor:pointer;border-radius:4px;">
-                  ⭐ Ajouter aux favoris
-                </button><br>`;
+    
+    // Le bouton sera ajouté dans la footer section
   }
-
   // 4) Coordonnées et cap
-  content += `📍 Lat : ${lat}<br>📍 Lon : ${lon}<br>🎯 Cap : ${heading}<br>`;
+  mainContent += `
+    <div class="section">
+      <h4>Coordonnées</h4>
+      📍 Lat : ${lat}<br>
+      📍 Lon : ${lon}<br>
+      🎯 Cap : ${heading}
+    </div>
+  `;
+  
   // 5) Détails via /details/ si callsign valable
   if (callsign && callsign !== "N/A" && callsign.trim().length >= 4) {
     try {
+      // Montrer le panneau avec info de base pendant le chargement
+      document.querySelector('#sidePanel .popup-header').innerHTML = headerContent;
+      document.querySelector('#sidePanel .popup-image').innerHTML = imageContent;
+      document.getElementById('sidePanelContent').innerHTML = `
+        <div class="section">
+          <h4>Informations</h4>
+          Chargement des détails...
+        </div>${mainContent}
+      `;
+      sidePanel.style.display = 'block';
+      
       const res = await fetch(`${API_BASE}/details/${callsign.trim()}`, { credentials: "include" });
-      const data = await res.json();      // on affiche d'abord la popup pour que l'utilisateur voie quelque chose
-      document.getElementById("plane-popup-content").innerHTML = content;
-      planePopup.setPosition(coordinate);
+      const data = await res.json();
 
       // enrichir avec le reste des détails
-      content +=
-        `Compagnie : ${data.airline || "N/D"}<br>` +
-        `Modèle : ${data.model || "N/D"}<br><br>` +
-        `<u>Départ</u> : ${data.departure || "N/D"}<br>` +
-        `&nbsp;&nbsp;Prévu : ${epochToTimeString(data.depSched)}<br>` +
-        `&nbsp;&nbsp;Réel : ${epochToTimeString(data.depReal)}<br><br>` +
-        `<u>Arrivée</u> : ${data.arrival || "N/D"}<br>` +
-        `&nbsp;&nbsp;Prévu : ${epochToTimeString(data.arrSched)}<br>` +
-        `&nbsp;&nbsp;Réel : ${epochToTimeString(data.arrReal)}<br><br>`;
+      mainContent = `
+        <div class="section">
+          <h4>Informations du vol</h4>
+          Compagnie : ${data.airline || "N/D"}<br>
+          Modèle : ${data.model || "N/D"}
+        </div>
+        <div class="section">
+          <h4>Départ</h4>
+          ${data.departure || "N/D"}<br>
+          Prévu : ${epochToTimeString(data.depSched)}<br>
+          Réel : ${epochToTimeString(data.depReal)}
+        </div>
+        <div class="section">
+          <h4>Arrivée</h4>
+          ${data.arrival || "N/D"}<br>
+          Prévu : ${epochToTimeString(data.arrSched)}<br>
+          Réel : ${epochToTimeString(data.arrReal)}
+        </div>
+      ` + mainContent;
     } catch (err) {
       console.warn("Erreur chargement détails :", err);
-      content += "❌ Erreur chargement détails<br>";
+      mainContent += `
+        <div class="section">
+          <h4>Erreur</h4>
+          ❌ Impossible de charger les détails du vol
+        </div>
+      `;
     }
-  }  // 6) On injecte et on affiche la popup des avions
-  document.getElementById("plane-popup-content").innerHTML = content;
-  planePopup.setPosition(coordinate);
+  }
+  // 6) On injecte et on affiche le panneau latéral
+  document.querySelector('#sidePanel .popup-header').innerHTML = headerContent;
+  document.querySelector('#sidePanel .popup-image').innerHTML = imageContent;
+  document.getElementById('sidePanelContent').innerHTML = mainContent;
+  
+  // Ajouter le bouton de favoris dans le footer si l'utilisateur est connecté
+  let footerContent = '';
+  if (isLoggedIn) {
+    footerContent = `<button class="btn" id="fav-${icao24}">⭐ Ajouter aux favoris</button>`;
+  }
+  document.querySelector('#sidePanel .popup-footer').innerHTML = footerContent;
+  
+  // Afficher le panneau
+  sidePanel.style.display = 'block';
 
   // 7) Handler du bouton "Ajouter aux favoris"
   if (isLoggedIn) {
