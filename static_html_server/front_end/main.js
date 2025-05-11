@@ -362,7 +362,16 @@ ws.onmessage = async evt => {
     ★ Ajouter aux favoris
   </button>
 `;
+  }
   
+  // Injecter le contenu dans le footer
+  document.querySelector('#sidePanel .popup-footer').innerHTML = footerContent;
+  
+  // Afficher le panneau
+  sidePanel.style.display = 'block';
+
+  // IMPORTANT: Ajouter l'event listener APRÈS avoir inséré le bouton dans le DOM
+  if (isLoggedIn) {
     const favBtn = document.getElementById(`fav-${icao24}`);
     if (favBtn) {
       favBtn.addEventListener("click", async () => {
@@ -373,44 +382,19 @@ ws.onmessage = async evt => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ icao24, callsign })
           });
-          if (!res.ok) throw new Error();
-          favBtn.textContent = "✔ Favori ajouté";
-          favBtn.disabled = true;
-          favBtn.classList.add("added");
-          loadFavorites();
-        } catch {
-          alert("⚠️ Impossible d’ajouter aux favoris.");
-        }
-      });
-    }
-  }
-  document.querySelector('#sidePanel .popup-footer').innerHTML = footerContent;
-  
-  // Afficher le panneau
-  sidePanel.style.display = 'block';
-
-  // 7) Handler du bouton "Ajouter aux favoris"
-  if (isLoggedIn) {
-    document
-      .getElementById(`fav-${icao24}`)
-      ?.addEventListener("click", async () => {
-        try {
-          const res = await fetch(`${API_BASE}/favorites`, {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ icao24, callsign })
-          });
           if (res.ok) {
-            alert("✅ Vol ajouté aux favoris !");
+            favBtn.textContent = "✅ Favori ajouté";
+            favBtn.disabled = true;
+            favBtn.classList.add("added");
             loadFavorites();
           } else {
-            alert("❌ Impossible d’ajouter le favori.");
+            alert("❌ Impossible d'ajouter le favori.");
           }
         } catch {
           alert("⚠️ Erreur réseau.");
         }
       });
+    }
   }
 };
     });

@@ -330,8 +330,10 @@ button.confirm-delete {
 /* Container admin */
 .admin-container {
   max-width: 960px;
-  margin: 2rem auto;
+  margin: 0 auto;
   padding: 0 1rem;
+  position: relative;
+  z-index: 10;
 }
 
 /* Table des utilisateurs */
@@ -362,9 +364,14 @@ button.secondary-button {
   border: none;
   border-radius: 0.25rem;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  font-weight: 500;
   transition: background 0.2s;
-  margin-bottom: 1rem;
+  margin: 70px 0 25px 0; /* Espace suffisant sous le header */
+  display: inline-block;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  z-index: 25;
+  position: relative;
 }
 button.secondary-button:hover {
   background: #546e7a;
