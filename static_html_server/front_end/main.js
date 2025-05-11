@@ -103,6 +103,19 @@ document.getElementById('popup-closer').onclick = () => {
   return false;
 };
 
+// OL overlay for plane popup
+const planePopup = new ol.Overlay({
+  element: document.getElementById('plane-popup'),
+  autoPan: true,
+  autoPanAnimation: { duration: 250 }
+});
+map.addOverlay(planePopup);
+
+document.getElementById('plane-popup-closer').onclick = () => {
+  planePopup.setPosition(undefined);
+  return false;
+};
+
 // ————————————————————————————————————
 // Side-panel for flights
 // ————————————————————————————————————
@@ -156,14 +169,12 @@ async function checkAuth() {
     const res = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
     if (res.ok) {
       user = await res.json();
-      // hide login/register, show logout/delete buttons, admin link...
-      document.getElementById('loginLink').style.display = 'none';
-      document.getElementById('registerLink').style.display = 'none';
+      // hide login/register, show logout/delete buttons, admin link...      // Mise à jour du menu utilisateur
       document.getElementById('userMenu').innerHTML = `
         Bonjour, ${user.username}
         <a href="#" id="logout">Déconnexion</a>
         ${user.role !== 'admin' ? '<a href="#" id="delete">Supprimer mon compte</a>' : ''}
-        ${user.role === 'admin' ? '<a href="/admin.html">Administration</a>' : ''}
+        ${user.role === 'admin' ? '<a href="admin.html">Administration</a>' : ''}
       `;
       document.getElementById('logout').onclick = async e => {
         e.preventDefault();
@@ -289,8 +300,8 @@ ws.onmessage = async evt => {
     try {
       const res = await fetch(`${API_BASE}/details/${callsign.trim()}`, { credentials: "include" });
       const data = await res.json();      // on affiche d'abord la popup pour que l'utilisateur voie quelque chose
-      document.getElementById("popup-content").innerHTML = content;
-      airportPopup.setPosition(coordinate);
+      document.getElementById("plane-popup-content").innerHTML = content;
+      planePopup.setPosition(coordinate);
 
       // enrichir avec le reste des détails
       content +=
@@ -306,10 +317,9 @@ ws.onmessage = async evt => {
       console.warn("Erreur chargement détails :", err);
       content += "❌ Erreur chargement détails<br>";
     }
-  }
-  // 6) On injecte et on affiche la popup
-  document.getElementById("popup-content").innerHTML = content;
-  airportPopup.setPosition(coordinate);
+  }  // 6) On injecte et on affiche la popup des avions
+  document.getElementById("plane-popup-content").innerHTML = content;
+  planePopup.setPosition(coordinate);
 
   // 7) Handler du bouton "Ajouter aux favoris"
   if (isLoggedIn) {
