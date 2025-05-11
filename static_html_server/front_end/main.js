@@ -1,67 +1,28 @@
 // main.js
 const API_BASE = "https://localhost:3000";
 
-// Expose pour search.js
-window.aircraftFeatures = {};
-window.allFlights = [];
+// ————————————————————————————————————
+// State
+// ————————————————————————————————————
+window.aircraftFeatures = {};   // icao24 → ol.Feature
+window.allFlights        = [];  // last raw flight array
+let user = null;                // { username, role } once logged in
 
-// --- Carte & Aéroports ---
-const map = new ol.Map({
-  target: 'map',
-  layers: [ new ol.layer.Tile({ source: new ol.source.OSM() }) ],
-  view: new ol.View({
-    center: ol.proj.fromLonLat([2.35, 48.85]),
-    zoom: 6
-  })
-});
-
-// Source aéroports
-const airportSource = new ol.source.Vector();
-map.addLayer(new ol.layer.Vector({ source: airportSource }));
-
-function airportStyle() {
-  return new ol.style.Style({
-    image: new ol.style.Icon({ src: "tower-icon.png", scale: 0.025 })
-  });
+// ————————————————————————————————————
+// Helpers
+// ————————————————————————————————————
+function epochToTimeString(ts) {
+  if (!ts) return "N/A";
+  const d = new Date(ts * 1000);
+  return d.toLocaleTimeString();
 }
 
-async function loadAirports() {
-  const res = await fetch(`${API_BASE}/airports`);
-  if (!res.ok) return console.error("Échec load airports");
-  const airports = await res.json();
-  airports.forEach(ap => {
-    const feat = new ol.Feature({
-      geometry: new ol.geom.Point(
-        ol.proj.fromLonLat([ap.longitude, ap.latitude])
-      ),
-      props: ap
-    });
-    feat.setStyle(airportStyle());
-    airportSource.addFeature(feat);
-  });
-}
-loadAirports();
-
-// --- OL popup pour aéroports ---
-const popup = new ol.Overlay({
-  element: document.getElementById('popup'),
-  autoPan: true,
-  autoPanAnimation: { duration: 250 }
-});
-map.addOverlay(popup);
-
-document.getElementById('popup-closer').onclick = () => {
-  popup.setPosition(undefined);
-  return false;
-};
-
-// --- Styles vols ---
 function visibleStyle(heading) {
   return new ol.style.Style({
     image: new ol.style.Icon({
       src: "plane-icon.png",
       scale: 0.035,
-      rotation: (heading||0) * Math.PI/180,
+      rotation: (heading || 0) * Math.PI / 180,
       rotateWithView: true
     })
   });
@@ -79,32 +40,85 @@ function selectedStyle(heading) {
     image: new ol.style.Icon({
       src: "plane-icon.png",
       scale: 0.045,
-      rotation: (heading||0) * Math.PI/180,
+      rotation: (heading || 0) * Math.PI / 180,
       rotateWithView: true
     })
   });
   return [halo, icon];
 }
 
-let selectedFeature = null;
-function setSelectedFeature(feat) {
-  if (selectedFeature && selectedFeature !== feat) {
-    selectedFeature.setStyle(
-      visibleStyle(selectedFeature.get('heading'))
-    );
-  }
-  feat.setStyle(selectedStyle(feat.get('heading')));
-  selectedFeature = feat;
+// ————————————————————————————————————
+// Map, layers & airport popup
+// ————————————————————————————————————
+const map = new ol.Map({
+  target: 'map',
+  layers: [
+    new ol.layer.Tile({ source: new ol.source.OSM() })
+  ],
+  view: new ol.View({
+    center: ol.proj.fromLonLat([2.35, 48.85]),
+    zoom: 6
+  })
+});
+
+// Airports vector layer
+const airportSource = new ol.source.Vector();
+map.addLayer(new ol.layer.Vector({ source: airportSource }));
+
+// Style for airport icons
+function airportStyle() {
+  return new ol.style.Style({
+    image: new ol.style.Icon({ src: "tower-icon.png", scale: 0.025 })
+  });
 }
 
-// --- Couches vols & favoris ---
-const vectorSource = new ol.source.Vector();
-map.addLayer(new ol.layer.Vector({ source: vectorSource }));
+// Load airports from your backend
+async function loadAirports() {
+  const res = await fetch(`${API_BASE}/airports`);
+  if (!res.ok) return console.error("Échec load airports");
+  const airports = await res.json();
+  airports.forEach(ap => {
+    const f = new ol.Feature({
+      geometry: new ol.geom.Point(
+        ol.proj.fromLonLat([ap.longitude, ap.latitude])
+      ),
+      props: ap
+    });
+    f.setStyle(airportStyle());
+    airportSource.addFeature(f);
+  });
+}
+loadAirports();
 
+// OL overlay for airport popup
+const airportPopup = new ol.Overlay({
+  element: document.getElementById('popup'),
+  autoPan: true,
+  autoPanAnimation: { duration: 250 }
+});
+map.addOverlay(airportPopup);
+
+document.getElementById('popup-closer').onclick = () => {
+  airportPopup.setPosition(undefined);
+  return false;
+};
+
+// ————————————————————————————————————
+// Side-panel for flights
+// ————————————————————————————————————
+const sidePanel = document.getElementById('sidePanel');
+const sideClose = document.getElementById('sidePanelClose');
+sideClose.onclick = () => {
+  sidePanel.style.display = 'none';
+  return false;
+};
+
+// ————————————————————————————————————
+// Favorites loader (once logged in)
+// ————————————————————————————————————
 async function loadFavorites() {
-  const sec = document.getElementById('favoritesSection');
-  const ul  = document.getElementById('favoritesList');
-  sec.style.display = 'block';
+  document.getElementById('favoritesSection').style.display = 'block';
+  const ul = document.getElementById('favoritesList');
   const res = await fetch(`${API_BASE}/favorites`, { credentials: 'include' });
   if (!res.ok) return;
   ul.innerHTML = '';
@@ -113,98 +127,233 @@ async function loadFavorites() {
     li.textContent = f.callsign || f.icao24;
     const btn = document.createElement('button');
     btn.textContent = '❌';
-    li.appendChild(btn);
-    li.onclick = () => {
-      const feat = aircraftFeatures[f.icao24];
-      if (!feat) return alert('Vol non détecté.');
-      const coord = feat.getGeometry().getCoordinates();
-      map.getView().animate({ center: coord, zoom: 8 });
-      feat.onClick?.(coord);
-    };
     btn.onclick = async e => {
       e.stopPropagation();
-      if (!confirm('Supprimer ce vol ?')) return;
-      const del = await fetch(
+      if (!confirm('Supprimer ce vol ?')) return;
+      const d = await fetch(
         `${API_BASE}/favorites/${f.icao24}`,
         { method: 'DELETE', credentials: 'include' }
       );
-      if (del.ok) li.remove();
+      if (d.ok) li.remove();
+    };
+    li.appendChild(btn);
+    li.onclick = () => {
+      const feat = window.aircraftFeatures[f.icao24];
+      if (!feat) return alert('Vol non détecté.');
+      const coord = feat.getGeometry().getCoordinates();
+      map.getView().animate({ center: coord, zoom: 8 });
+      feat.onClick(coord);
     };
     ul.appendChild(li);
   }
 }
 
-// --- Panneau latéral for vols ---
-const sidePanel = document.getElementById('sidePanel');
-const sideClose = document.getElementById('sidePanelClose');
-sideClose.onclick = () => {
-  sidePanel.style.display = 'none';
-  if (selectedFeature) {
-    selectedFeature.setStyle(
-      visibleStyle(selectedFeature.get('heading'))
-    );
-    selectedFeature = null;
+// ————————————————————————————————————
+// Check authentication & adjust UI
+// ————————————————————————————————————
+async function checkAuth() {
+  try {
+    const res = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
+    if (res.ok) {
+      user = await res.json();
+      // hide login/register, show logout/delete buttons, admin link...
+      document.getElementById('loginLink').style.display = 'none';
+      document.getElementById('registerLink').style.display = 'none';
+      document.getElementById('userMenu').innerHTML = `
+        Bonjour, ${user.username}
+        <a href="#" id="logout">Déconnexion</a>
+        ${user.role !== 'admin' ? '<a href="#" id="delete">Supprimer mon compte</a>' : ''}
+        ${user.role === 'admin' ? '<a href="/admin.html">Administration</a>' : ''}
+      `;
+      document.getElementById('logout').onclick = async e => {
+        e.preventDefault();
+        await fetch(`${API_BASE}/logout`, { method: 'POST', credentials: 'include' });
+        location.reload();
+      };
+      if (user.role !== 'admin') {
+        document.getElementById('delete').onclick = async e => {
+          e.preventDefault();
+          if (!confirm('Confirmez-vous la suppression de votre compte ?')) return;
+          await fetch(`${API_BASE}/delete-account`, { method: 'DELETE', credentials: 'include' });
+          location.reload();
+        };
+      }
+      await loadFavorites();
+    }
+  } catch {}
+}
+checkAuth();
+
+// ————————————————————————————————————
+// Flight vector layer & WebSocket
+// ————————————————————————————————————
+const flightSource = new ol.source.Vector();
+map.addLayer(new ol.layer.Vector({ source: flightSource }));
+
+let selectedFeature = null;
+function setSelectedFeature(feat) {
+  if (selectedFeature && selectedFeature !== feat) {
+    const h = selectedFeature.get('heading');
+    selectedFeature.setStyle(visibleStyle(h));
   }
-  return false;
+  const h = feat.get('heading');
+  feat.setStyle(selectedStyle(h));
+  selectedFeature = feat;
+}
+
+// Connexion au WebSocket en utilisant l'URL API_BASE au lieu de location.host
+// car le backend et le frontend peuvent être sur des hôtes différents
+const wsUrl = API_BASE.replace('https://', 'wss://') + '/ws';
+console.log("Tentative de connexion WebSocket à:", wsUrl);
+const ws = new WebSocket(wsUrl);
+
+// Attendre que le WebSocket soit complètement connecté avant d'essayer de l'utiliser
+let wsReady = false;
+ws.onopen = () => {
+  console.log("🟢 WebSocket connecté à", wsUrl);
+  wsReady = true;
+  
+  // Attendre un court instant pour s'assurer que la connexion est stable
+  setTimeout(() => {
+    console.log("WebSocket prêt à recevoir des données");
+  }, 300);
 };
 
-// --- WebSocket vols ---
-const ws = new WebSocket('wss://localhost:3000/ws');
-ws.onopen = () => console.log('🟢 WebSocket connecté à /ws');
-ws.onclose = evt => console.log(`🟠 WebSocket fermé, code: ${evt.code}, raison: ${evt.reason}`);
-ws.onerror = err => console.error('🔴 WebSocket erreur:', err);
-ws.onmessage = evt => {
-  console.log("▶️ Données WS reçues, longueur:", evt.data.length);
+ws.onclose   = evt => console.log(`🟠 WebSocket fermé, code: ${evt.code}, raison: ${evt.reason}`);
+ws.onerror   = e => console.error("🔴 WebSocket erreur:", e);
+ws.onmessage = async evt => {
   try {
+    console.log("📦 Données reçues, taille:", evt.data.length);
     const planes = JSON.parse(evt.data);
     console.log(`✈️ ${planes.length} vols reçus`);
     window.allFlights = planes;
+    
     planes.forEach(p => {
-      const { icao24, lat, lon, heading, callsign, geo_altitude } = p;
-      if (!lat || !lon) return;
+      const { icao24, lat, lon, heading, callsign } = p;
+      if (lat == null || lon == null) return;
       const coords = ol.proj.fromLonLat([lon, lat]);
-      let feat = aircraftFeatures[icao24];
+      let feat = window.aircraftFeatures[icao24];
       if (!feat) {
         feat = new ol.Feature(new ol.geom.Point(coords));
-        vectorSource.addFeature(feat);
-        aircraftFeatures[icao24] = feat;
+        feat.setId(icao24);
+        flightSource.addFeature(feat);
+        window.aircraftFeatures[icao24] = feat;
       } else {
         feat.getGeometry().setCoordinates(coords);
       }
-      feat.set('callsign', callsign);
-      feat.set('icao24', icao24);
-      feat.set('heading', heading);
-      feat.set('geo_altitude', geo_altitude);
+      feat.setProperties({ icao24, callsign, lat, lon, heading });
       feat.setStyle(
-        selectedFeature === feat
+        feat === selectedFeature
           ? selectedStyle(heading)
           : visibleStyle(heading)
       );
-      feat.onClick = coord => {
-        setSelectedFeature(feat);
-        // détail minimal, tu peux enrichir
-        const content = `<strong>Vol : ${callsign||icao24}</strong>`;
-        sidePanel.querySelector('.popup-header').innerHTML = content;
-        sidePanel.querySelector('#sidePanelContent').innerHTML = '';
-        sidePanel.querySelector('.popup-footer').innerHTML = '';
-        sidePanel.style.display = 'block';
-      };
+      
+      feat.onClick = async (coordinate) => {
+  // 1) Titre du vol
+  let content = `<strong>Vol : ${callsign || icao24}</strong><br>`;
+
+  // 2) Photo depuis planespotters (optionnel)
+  try {
+    const res = await fetch(`https://api.planespotters.net/pub/photos/hex/${icao24}`);
+    if (res.ok) {
+      const json = await res.json();
+      const img = json.photos?.[0]?.thumbnail_large?.src;
+      if (img) {
+        content = `<img src="${img}" alt="Avion ${callsign}" style="width:100%;border-radius:6px;margin-bottom:10px;">` + content;
+      }
+    }
+  } catch (err) {
+    console.warn("Erreur récupération photo :", err);
+  }
+
+  // 3) Bouton "Ajouter aux favoris" si connecté
+  const isLoggedIn = document.getElementById("authOptions")?.textContent?.includes("Déconnexion");
+  if (isLoggedIn) {
+    // log du clic
+    fetch(`${API_BASE}/logs`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: callsign || icao24 })
+    }).catch(console.warn);
+
+    content += `<button id="fav-${icao24}" style="margin-top:5px;background:gold;border:none;padding:5px 8px;cursor:pointer;border-radius:4px;">
+                  ⭐ Ajouter aux favoris
+                </button><br>`;
+  }
+
+  // 4) Coordonnées et cap
+  content += `📍 Lat : ${lat}<br>📍 Lon : ${lon}<br>🎯 Cap : ${heading}<br>`;
+  // 5) Détails via /details/ si callsign valable
+  if (callsign && callsign !== "N/A" && callsign.trim().length >= 4) {
+    try {
+      const res = await fetch(`${API_BASE}/details/${callsign.trim()}`, { credentials: "include" });
+      const data = await res.json();      // on affiche d'abord la popup pour que l'utilisateur voie quelque chose
+      document.getElementById("popup-content").innerHTML = content;
+      airportPopup.setPosition(coordinate);
+
+      // enrichir avec le reste des détails
+      content +=
+        `Compagnie : ${data.airline || "N/D"}<br>` +
+        `Modèle : ${data.model || "N/D"}<br><br>` +
+        `<u>Départ</u> : ${data.departure || "N/D"}<br>` +
+        `&nbsp;&nbsp;Prévu : ${epochToTimeString(data.depSched)}<br>` +
+        `&nbsp;&nbsp;Réel : ${epochToTimeString(data.depReal)}<br><br>` +
+        `<u>Arrivée</u> : ${data.arrival || "N/D"}<br>` +
+        `&nbsp;&nbsp;Prévu : ${epochToTimeString(data.arrSched)}<br>` +
+        `&nbsp;&nbsp;Réel : ${epochToTimeString(data.arrReal)}<br><br>`;
+    } catch (err) {
+      console.warn("Erreur chargement détails :", err);
+      content += "❌ Erreur chargement détails<br>";
+    }
+  }
+  // 6) On injecte et on affiche la popup
+  document.getElementById("popup-content").innerHTML = content;
+  airportPopup.setPosition(coordinate);
+
+  // 7) Handler du bouton "Ajouter aux favoris"
+  if (isLoggedIn) {
+    document
+      .getElementById(`fav-${icao24}`)
+      ?.addEventListener("click", async () => {
+        try {
+          const res = await fetch(`${API_BASE}/favorites`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ icao24, callsign })
+          });
+          if (res.ok) {
+            alert("✅ Vol ajouté aux favoris !");
+            loadFavorites();
+          } else {
+            alert("❌ Impossible d’ajouter le favori.");
+          }
+        } catch {
+          alert("⚠️ Erreur réseau.");
+        }
+      });
+  }
+};
     });
-  } catch (error) {
-    console.error("🔴 Erreur de parsing JSON:", error);
+  } catch (e) {
+    console.error("🔴 Erreur de traitement des données WebSocket:", e);
   }
 };
 
-// --- Clic unique : vols d'abord, sinon aéroports ---
+// ————————————————————————————————————
+// Single-click dispatcher
+// ————————————————————————————————————
 map.on('singleclick', evt => {
-  let handled = false;
+  let hit = false;
   map.forEachFeatureAtPixel(evt.pixel, feat => {
-    if (!handled && feat.onClick) {
+    if (feat.onClick && !hit) {
       feat.onClick(evt.coordinate);
-      handled = true;
+      hit = true;
     }
   });
-  if (!handled) {
+  if (!hit) {
+    // airport popup
     map.forEachFeatureAtPixel(evt.pixel, feat => {
       const p = feat.get('props');
       if (p && p.icao) {
@@ -214,16 +363,8 @@ map.on('singleclick', evt => {
           ${p.city}, ${p.country}
         `;
         document.getElementById('popup-content').innerHTML = html;
-        popup.setPosition(coord);
+        airportPopup.setPosition(coord);
       }
     });
   }
 });
-
-// --- Auth & Chargement favoris ---
-(async function() {
-  try {
-    const res = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
-    if (res.ok) loadFavorites();
-  } catch {}
-})();

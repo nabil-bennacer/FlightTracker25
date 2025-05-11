@@ -156,9 +156,12 @@ router.post("/login", async (ctx) => {
     username,
     role: row.role,
     exp: getNumericDate(60 * 60),
-  });
-  await ctx.cookies.set("token", token, {
-    httpOnly: true, secure: true, sameSite: "strict", path: "/", maxAge: 3600,
+  });  await ctx.cookies.set("token", token, {
+    httpOnly: true, 
+    secure: true, // Gardez cette option car votre serveur utilise HTTPS
+    sameSite: "strict", 
+    path: "/", 
+    maxAge: 3600,
   });
   ctx.response.body = { message: "Connexion réussie" };
 });
