@@ -162,6 +162,32 @@ header h1 {
   cursor: pointer;
 }
 
+/* Bouton favoris dans side-panel */
+.favorite-button {
+  display: block;
+  width: 100%;
+  padding: 0.75em 1em;
+  background: #0288d1;
+  color: #fff;
+  border: none;
+  border-radius: 0.25rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 1rem;
+}
+.favorite-button:hover {
+  background: #0277bd;
+}
+.favorite-button.added {
+  background: #388e3c;
+  cursor: default;
+}
+.favorite-button.added:hover {
+  background: #2e7d32;
+}
+
+
 /* OL Popup for Airports */
 .ol-popup {
   position: absolute;
@@ -295,12 +321,54 @@ form button:hover {
   background: var(--primary-light);
 }
 
-/* Utility Buttons */
-button.secondary-button {
-  background: var(--secondary);
-  color: var(--bg-white);
-}
+
 button.confirm-delete {
   background: #d32f2f;
   color: var(--bg-white);
 }
+
+/* Container admin */
+.admin-container {
+  max-width: 960px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+/* Table des utilisateurs */
+#usersTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+#usersTable th,
+#usersTable td {
+  border: 1px solid #e0e0e0;
+  padding: 0.75rem;
+  text-align: left;
+  font-size: 0.9rem;
+}
+#usersTable th {
+  background: #f5f5f5;
+  font-weight: 600;
+}
+
+/* Retour bouton (secondary-button) */
+button.secondary-button {
+  background: #607d8b;
+  color: #fff;
+  padding: 0.5em 1em;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+  margin-bottom: 1rem;
+}
+button.secondary-button:hover {
+  background: #546e7a;
+}
+
+/* Rupture horizontale si table trop large */
+.admin-container { overflow-x: auto; }

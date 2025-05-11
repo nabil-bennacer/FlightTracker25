@@ -280,7 +280,7 @@ ws.onmessage = async evt => {
     console.warn("Erreur récupération photo :", err);
   }
   // 3) Bouton "Ajouter aux favoris" si connecté
-  const isLoggedIn = document.getElementById("authOptions")?.textContent?.includes("Déconnexion");
+  const isLoggedIn = !!user;
   if (isLoggedIn) {
     // log du clic
     fetch(`${API_BASE}/logs`, {
@@ -357,7 +357,32 @@ ws.onmessage = async evt => {
   // Ajouter le bouton de favoris dans le footer si l'utilisateur est connecté
   let footerContent = '';
   if (isLoggedIn) {
-    footerContent = `<button class="btn" id="fav-${icao24}">⭐ Ajouter aux favoris</button>`;
+    footerContent = `
+  <button class="favorite-button" id="fav-${icao24}">
+    ★ Ajouter aux favoris
+  </button>
+`;
+  
+    const favBtn = document.getElementById(`fav-${icao24}`);
+    if (favBtn) {
+      favBtn.addEventListener("click", async () => {
+        try {
+          const res = await fetch(`${API_BASE}/favorites`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ icao24, callsign })
+          });
+          if (!res.ok) throw new Error();
+          favBtn.textContent = "✔ Favori ajouté";
+          favBtn.disabled = true;
+          favBtn.classList.add("added");
+          loadFavorites();
+        } catch {
+          alert("⚠️ Impossible d’ajouter aux favoris.");
+        }
+      });
+    }
   }
   document.querySelector('#sidePanel .popup-footer').innerHTML = footerContent;
   

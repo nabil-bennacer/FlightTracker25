@@ -6,6 +6,17 @@ async function initAdminMenu() {
   const { username, role } = await res.json();
   if (role !== 'admin') return window.location.href = 'index.html';
   //… construire le menu admin avec logout …
+  document.getElementById('authOptions').innerHTML = `
+    <span>Admin: ${username}</span>
+    <a href="#" id="logout">Déconnexion</a>
+    <a href="index.html">Retour à l'accueil</a>
+  `;
+  
+  document.getElementById('logout')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await fetch(`${API_BASE}/logout`, { method: 'POST', credentials: 'include' });
+    window.location.href = 'index.html';
+  });
 }
 async function loadAdminData() {
   const res = await fetch(`${API_BASE}/admin/users`, { credentials: 'include' });
