@@ -20,7 +20,12 @@ const RAPID_KEY = Deno.env.get("RAPIDAPI_KEY")!;
 const AEROBOX_HOST = "aerodatabox.p.rapidapi.com";
 
 const CACHE_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 jours
-const flightCache = new Map<string, { data: any; timestamp: number }>();
+// Type pour les données mises en cache
+type CachedData = {
+  data: FlightData | FlightData[];
+  timestamp: number;
+};
+const flightCache = new Map<string, CachedData>();
 
 const db = new Database("flighttracker.db");
 
@@ -178,7 +183,7 @@ router.post("/logout", (ctx) => {
   ctx.response.body = { message: "Déconnecté" };
 });
 
-router.delete("/delete-account", authMiddleware, async (ctx) => {
+router.delete("/delete-account", authMiddleware, (ctx) => {
   const { id, role } = ctx.state.user as { id: number; role: string };
   if (role === "admin") {
     ctx.response.status = 403;
@@ -201,14 +206,28 @@ router.post("/logs", authMiddleware, async (ctx) => {
   ctx.response.body = { message: "Log ajouté" };
 });
 
+// Types pour les données utilisateur
+interface User {
+  id: number;
+  username: string;
+}
+
+interface LogRecord {
+  action: string;
+}
+
+interface FlightRecord {
+  callsign: string;
+}
+
 // Route Admin : liste des users, leurs clics et favoris
 router.get("/admin/users", authMiddleware, adminMiddleware, (ctx) => {
-  const users = db.prepare("SELECT id, username FROM users").all();
-  const data = users.map((u: any) => {
+  const users = db.prepare("SELECT id, username FROM users").all() as User[];
+  const data = users.map((u: User) => {
     const consulted = db
       .prepare("SELECT action FROM logs WHERE user_id = ? ORDER BY timestamp DESC")
       .all(u.id)
-      .map((r: any) => r.action);
+      .map((r: LogRecord) => r.action);
     const favorites = db
       .prepare(`
         SELECT f.callsign
@@ -217,7 +236,7 @@ router.get("/admin/users", authMiddleware, adminMiddleware, (ctx) => {
          WHERE uf.user_id = ?
       `)
       .all(u.id)
-      .map((r: any) => r.callsign);
+      .map((r: FlightRecord) => r.callsign);
     return { username: u.username, consulted, favorites };
   });
   ctx.response.body = data;
@@ -397,7 +416,7 @@ const connectedSockets = new Set<WebSocket>();
 // ← cache global des derniers vols OpenSky
 let lastFlights: FlightData[] = [];
 
-router.get("/ws", async (ctx) => {
+router.get("/ws", (ctx) => {
   if (!ctx.isUpgradable) ctx.throw(501);
   
   console.log("⚡ Nouvelle connexion WebSocket");
@@ -440,12 +459,33 @@ interface FlightData {
   source: string;
 }
 
+// Type pour les données brutes de l'API OpenSky
+type OpenSkyStateData = [
+  string,   // icao24
+  string,   // callsign
+  string,   // origin_country
+  number,   // time_position
+  number,   // last_contact
+  number,   // longitude
+  number,   // latitude
+  number,   // geo_altitude
+  boolean,  // on_ground
+  number,   // velocity
+  number,   // heading
+  number,   // vertical_rate
+  string[], // sensors
+  number,   // baro_altitude
+  string,   // squawk
+  boolean,  // spi
+  number    // position_source
+];
+
 async function fetchFromOpenSky(): Promise<FlightData[]> {
   try {
     const r = await fetch("https://opensky-network.org/api/states/all");
     if (r.status === 429) return [];
     const j = await r.json();
-    return (j.states || []).map((s: any) => ({
+    return (j.states || []).map((s: OpenSkyStateData) => ({
       icao24: s[0],
       callsign: s[1]?.trim() || "N/A",
       lat: s[6],
@@ -471,7 +511,9 @@ async function fetchAndBroadcastFlights() {
       // Si la connexion est morte, on la retire
       try { 
         connectedSockets.delete(ws); 
-      } catch {}
+      } catch (error) {
+        console.error("Erreur lors de la suppression du socket:", error);
+      }
     }
   }
 }
