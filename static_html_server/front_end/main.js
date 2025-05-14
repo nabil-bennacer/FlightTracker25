@@ -60,6 +60,8 @@ const map = new ol.Map({
     zoom: 6
   })
 });
+const zoomCtrl = new ol.control.Zoom({ className: 'zoom-control' });
+map.addControl(zoomCtrl);
 
 // Airports vector layer
 const airportSource = new ol.source.Vector();
@@ -240,7 +242,7 @@ ws.onmessage = async evt => {
     window.allFlights = planes;
     
     planes.forEach(p => {
-      const { icao24, lat, lon, heading, callsign } = p;
+      const { icao24, lat, lon, heading, callsign, geo_altitude } = p;
       if (lat == null || lon == null) return;
       const coords = ol.proj.fromLonLat([lon, lat]);
       let feat = window.aircraftFeatures[icao24];
@@ -252,7 +254,7 @@ ws.onmessage = async evt => {
       } else {
         feat.getGeometry().setCoordinates(coords);
       }
-      feat.setProperties({ icao24, callsign, lat, lon, heading });
+      feat.setProperties({ icao24, callsign, lat, lon, heading, altitude : geo_altitude });
       feat.setStyle(
         feat === selectedFeature
           ? selectedStyle(heading)
@@ -293,14 +295,20 @@ ws.onmessage = async evt => {
     // Le bouton sera ajouté dans la footer section
   }
   // 4) Coordonnées et cap
-  mainContent += `
-    <div class="section">
-      <h4>Coordonnées</h4>
-      📍 Lat : ${lat}<br>
-      📍 Lon : ${lon}<br>
-      🎯 Cap : ${heading}
-    </div>
-  `;
+        const altM = feat.get('altitude');
+        const altFt = altM != null
+          ? Math.round(altM * 3.28084).toLocaleString('en-US') + ' ft'
+          : 'N/A';
+
+        mainContent += `
+          <div class="section">
+            <h4>Coordonnées</h4>
+            📍 Lat : ${lat}<br>
+            📍 Lon : ${lon}<br>
+            🎯 Cap : ${heading}<br>
+            📡 Altitude : ${altFt}
+          </div>
+        `;
   
   // 5) Détails via /details/ si callsign valable
   if (callsign && callsign !== "N/A" && callsign.trim().length >= 4) {

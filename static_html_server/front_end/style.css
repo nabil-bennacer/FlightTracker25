@@ -379,3 +379,28 @@ button.secondary-button:hover {
 
 /* Rupture horizontale si table trop large */
 .admin-container { overflow-x: auto; }
+
+/* Positionnement du zoom-control en bas à gauche */
+.zoom-control {
+  top: auto;      /* on désactive le top par défaut */
+  bottom: 8px;    /* à 8px du bas */
+  left: 8px;      /* à 8px de la gauche */
+}
+
+/* Taille réduite des boutons + et – */
+.zoom-control .ol-zoom-in,
+.zoom-control .ol-zoom-out {
+  width: 24px;
+  height: 24px;
+  line-height: 24px;      /* centrer le “+” / “–” verticalement */
+  font-size: 16px;        /* taille du symbole */
+  padding: 0;
+}
+
+/* Espacement entre les deux boutons */
+.zoom-control button.ol-zoom-out {
+  margin-top: 4px;
+}
+
+
+

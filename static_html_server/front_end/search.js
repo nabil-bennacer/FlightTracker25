@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const feat = aircraftFeatures[f.icao24];
       if (!feat) return alert('Vol non détecté sur la carte.');
       const coord = feat.getGeometry().getCoordinates();
-      map.getView().animate({ center: coord, zoom: 8 });
+      map.getView().animate({ center: coord, zoom: 9 });
       feat.onClick?.(coord);
     }
   

@@ -477,7 +477,7 @@ async function fetchAndBroadcastFlights() {
 }
 
 
-setInterval(fetchAndBroadcastFlights, 240000); // toutes les 4 minutes
+setInterval(fetchAndBroadcastFlights, 300000); // toutes les 5 minutes
 fetchAndBroadcastFlights();
 
 const app = new Application();
