@@ -20,7 +20,7 @@ function epochToTimeString(ts) {
 function visibleStyle(heading) {
   return new ol.style.Style({
     image: new ol.style.Icon({
-      src: "plane-icon.png",
+      src: "img/plane-icon.png",
       scale: 0.035,
       rotation: (heading || 0) * Math.PI / 180,
       rotateWithView: true
@@ -38,7 +38,7 @@ function selectedStyle(heading) {
   });
   const icon = new ol.style.Style({
     image: new ol.style.Icon({
-      src: "plane-icon.png",
+      src: "img/plane-icon.png",
       scale: 0.045,
       rotation: (heading || 0) * Math.PI / 180,
       rotateWithView: true
@@ -70,7 +70,7 @@ map.addLayer(new ol.layer.Vector({ source: airportSource }));
 // Style for airport icons
 function airportStyle() {
   return new ol.style.Style({
-    image: new ol.style.Icon({ src: "tower-icon.png", scale: 0.025 })
+    image: new ol.style.Icon({ src: "img/tower-icon.png", scale: 0.025 })
   });
 }
 
@@ -193,7 +193,9 @@ async function checkAuth() {
       }
       await loadFavorites();
     }
-  } catch {}
+  } catch {
+    console.warn("Erreur lors de la vérification de l'authentification :", err);
+  }
 }
 checkAuth();
 

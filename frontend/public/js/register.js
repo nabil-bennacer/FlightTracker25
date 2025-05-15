@@ -24,4 +24,3 @@ document.getElementById("registerForm").addEventListener("submit", async (e) => 
       alert("❌ Erreur réseau : " + err.message);
     }
   });
-  

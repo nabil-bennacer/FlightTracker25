@@ -27,7 +27,7 @@ type CachedData = {
 };
 const flightCache = new Map<string, CachedData>();
 
-const db = new Database("flighttracker.db");
+const db = new Database("../data/flighttracker.db");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
