@@ -1,5 +1,5 @@
-// admin.js
-const API_BASE = "https://localhost:3000";
+import { API_BASE } from './config.js';
+
 async function initAdminMenu() {
   const res = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
   if (!res.ok) return window.location.href = 'login.html';

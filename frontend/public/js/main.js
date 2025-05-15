@@ -1,5 +1,6 @@
-// main.js
-const API_BASE = "https://localhost:3000";
+import { API_BASE } from './config.js';
+import { loadFavorites } from './favoris.js';
+
 
 // ————————————————————————————————————
 // State
@@ -62,6 +63,7 @@ const map = new ol.Map({
 });
 const zoomCtrl = new ol.control.Zoom({ className: 'zoom-control' });
 map.addControl(zoomCtrl);
+window.map = map;
 
 // Airports vector layer
 const airportSource = new ol.source.Vector();
@@ -129,41 +131,6 @@ sideClose.onclick = () => {
 };
 
 // ————————————————————————————————————
-// Favorites loader (once logged in)
-// ————————————————————————————————————
-async function loadFavorites() {
-  document.getElementById('favoritesSection').style.display = 'block';
-  const ul = document.getElementById('favoritesList');
-  const res = await fetch(`${API_BASE}/favorites`, { credentials: 'include' });
-  if (!res.ok) return;
-  ul.innerHTML = '';
-  for (const f of await res.json()) {
-    const li = document.createElement('li');
-    li.textContent = f.callsign || f.icao24;
-    const btn = document.createElement('button');
-    btn.textContent = '❌';
-    btn.onclick = async e => {
-      e.stopPropagation();
-      if (!confirm('Supprimer ce vol ?')) return;
-      const d = await fetch(
-        `${API_BASE}/favorites/${f.icao24}`,
-        { method: 'DELETE', credentials: 'include' }
-      );
-      if (d.ok) li.remove();
-    };
-    li.appendChild(btn);
-    li.onclick = () => {
-      const feat = window.aircraftFeatures[f.icao24];
-      if (!feat) return alert('Vol non détecté.');
-      const coord = feat.getGeometry().getCoordinates();
-      map.getView().animate({ center: coord, zoom: 8 });
-      feat.onClick(coord);
-    };
-    ul.appendChild(li);
-  }
-}
-
-// ————————————————————————————————————
 // Check authentication & adjust UI
 // ————————————————————————————————————
 async function checkAuth() {
@@ -171,7 +138,6 @@ async function checkAuth() {
     const res = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
     if (res.ok) {
       user = await res.json();
-      // hide login/register, show logout/delete buttons, admin link...      // Mise à jour du menu utilisateur
       document.getElementById('userMenu').innerHTML = `
         Bonjour, ${user.username}
         <a href="#" id="logout">Déconnexion</a>
@@ -191,9 +157,10 @@ async function checkAuth() {
           location.reload();
         };
       }
+      // initialise les favoris via favoris.js
       await loadFavorites();
     }
-  } catch {
+  } catch (err) {
     console.warn("Erreur lors de la vérification de l'authentification :", err);
   }
 }
@@ -216,33 +183,15 @@ function setSelectedFeature(feat) {
   selectedFeature = feat;
 }
 
-// Connexion au WebSocket en utilisant l'URL API_BASE au lieu de location.host
-// car le backend et le frontend peuvent être sur des hôtes différents
-const wsUrl = API_BASE.replace('https://', 'wss://') + '/ws';
-console.log("Tentative de connexion WebSocket à:", wsUrl);
-const ws = new WebSocket(wsUrl);
-
-// Attendre que le WebSocket soit complètement connecté avant d'essayer de l'utiliser
-let wsReady = false;
-ws.onopen = () => {
-  console.log("🟢 WebSocket connecté à", wsUrl);
-  wsReady = true;
-  
-  // Attendre un court instant pour s'assurer que la connexion est stable
-  setTimeout(() => {
-    console.log("WebSocket prêt à recevoir des données");
-  }, 300);
-};
-
-ws.onclose   = evt => console.log(`🟠 WebSocket fermé, code: ${evt.code}, raison: ${evt.reason}`);
-ws.onerror   = e => console.error("🔴 WebSocket erreur:", e);
+// Connexion WebSocket
+const ws = new WebSocket(API_BASE.replace('https://', 'wss://') + '/ws');
+ws.onopen = () => console.log("🟢 WebSocket connecté");
+ws.onclose = evt => console.log(`🟠 WS fermé (${evt.code})`);
+ws.onerror = e => console.error("🔴 WS erreur :", e);
 ws.onmessage = async evt => {
   try {
-    console.log("📦 Données reçues, taille:", evt.data.length);
     const planes = JSON.parse(evt.data);
-    console.log(`✈️ ${planes.length} vols reçus`);
     window.allFlights = planes;
-    
     planes.forEach(p => {
       const { icao24, lat, lon, heading, callsign, geo_altitude } = p;
       if (lat == null || lon == null) return;
@@ -256,162 +205,141 @@ ws.onmessage = async evt => {
       } else {
         feat.getGeometry().setCoordinates(coords);
       }
-      feat.setProperties({ icao24, callsign, lat, lon, heading, altitude : geo_altitude });
-      feat.setStyle(
-        feat === selectedFeature
-          ? selectedStyle(heading)
-          : visibleStyle(heading)
-      );
-        feat.onClick = async (coordinate) => {
-  setSelectedFeature(feat);
-  
-  // Préparer le contenu pour le panneau latéral
-  const headerContent = `<h3 class="flight-title">Vol : ${callsign || icao24}</h3>`;
-  let mainContent = '';
-  let imageContent = '';
+      feat.setProperties({ icao24, callsign, lat, lon, heading, altitude: geo_altitude });
+      feat.setStyle(feat === selectedFeature ? selectedStyle(heading) : visibleStyle(heading));
+      feat.onClick = coordinate => handleFlightClick(feat, coordinate);
+    });
+  } catch (e) {
+    console.error("🔴 Erreur traitement WS :", e);
+  }
+};
 
-  // 2) Photo depuis planespotters (optionnel)
+async function handleFlightClick(feat) {
+  // 0) Sélection visuelle
+  setSelectedFeature(feat);
+
+  // 1) Propriétés de base
+  const { icao24, callsign, lat, lon, heading } = feat.getProperties();
+  const altM = feat.get('altitude');
+  const altFt = altM != null
+    ? Math.round(altM * 3.28084).toLocaleString('en-US') + ' ft'
+    : 'N/A';
+
+  // 2) Photo planespotters (optionnelle)
+  let imageContent = '';
   try {
-    const res = await fetch(`https://api.planespotters.net/pub/photos/hex/${icao24}`);
-    if (res.ok) {
-      const json = await res.json();
-      const img = json.photos?.[0]?.thumbnail_large?.src;
-      if (img) {
-        imageContent = `<img src="${img}" alt="Avion ${callsign}" style="width:100%;">`;
+    const resImg = await fetch(
+      `https://api.planespotters.net/pub/photos/hex/${icao24}`
+    );
+    if (resImg.ok) {
+      const j = await resImg.json();
+      const src = j.photos?.[0]?.thumbnail_large?.src;
+      if (src) {
+        imageContent = `<img src="${src}" alt="Avion ${callsign}" />`;
       }
     }
-  } catch (err) {
-    console.warn("Erreur récupération photo :", err);
+  } catch {
+    console.warn("❌ Impossible de charger la photo planespotters");
   }
-  // 3) Bouton "Ajouter aux favoris" si connecté
-  const isLoggedIn = !!user;
-  if (isLoggedIn) {
-    // log du clic
-    fetch(`${API_BASE}/logs`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: callsign || icao24 })
-    }).catch(console.warn);
-    
-    // Le bouton sera ajouté dans la footer section
-  }
-  // 4) Coordonnées et cap
-        const altM = feat.get('altitude');
-        const altFt = altM != null
-          ? Math.round(altM * 3.28084).toLocaleString('en-US') + ' ft'
-          : 'N/A';
+  // injecte la photo dans la zone dédiée
+  document.querySelector('#sidePanel .popup-image').innerHTML = imageContent;
 
-        mainContent += `
-          <div class="section">
-            <h4>Coordonnées</h4>
-            📍 Lat : ${lat}<br>
-            📍 Lon : ${lon}<br>
-            🎯 Cap : ${heading}<br>
-            📡 Altitude : ${altFt}
-          </div>
-        `;
-  
-  // 5) Détails via /details/ si callsign valable
-  if (callsign && callsign !== "N/A" && callsign.trim().length >= 4) {
+  // 3) Titre
+  const titleHTML = `<h3 class="flight-title">Vol : ${callsign || icao24}</h3>`;
+  document.querySelector('#sidePanel .popup-header').innerHTML = titleHTML;
+
+  // 4) Contenu statique (position + cap + altitude)
+  let mainContent = `
+    <div class="section">
+      <h4>📡 Position</h4>
+      Lat : ${lat.toFixed(4)}<br>
+      Lon : ${lon.toFixed(4)}<br>
+      Cap : ${heading.toFixed(1)}°<br>
+      Altitude : ${altFt}
+    </div>
+  `;
+
+  // 5) Détails via /details/ (compagnie, modèle, départ, arrivée)
+  if (callsign && callsign.trim().length >= 4) {
     try {
-      // Montrer le panneau avec info de base pendant le chargement
-      document.querySelector('#sidePanel .popup-header').innerHTML = headerContent;
-      document.querySelector('#sidePanel .popup-image').innerHTML = imageContent;
-      document.getElementById('sidePanelContent').innerHTML = `
-        <div class="section">
-          <h4>Informations</h4>
-          Chargement des détails...
-        </div>${mainContent}
-      `;
-      sidePanel.style.display = 'block';
-      
-      const res = await fetch(`${API_BASE}/details/${callsign.trim()}`, { credentials: "include" });
+      const res = await fetch(
+        `${API_BASE}/details/${callsign.trim()}`,
+        { credentials: 'include' }
+      );
       const data = await res.json();
-
-      // enrichir avec le reste des détails
       mainContent = `
         <div class="section">
           <h4>Informations du vol</h4>
           Compagnie : ${data.airline || "N/D"}<br>
-          Modèle : ${data.model || "N/D"}
+          Modèle   : ${data.model   || "N/D"}
         </div>
         <div class="section">
-          <h4>Départ</h4>
+          <h4>✈️ Départ</h4>
           ${data.departure || "N/D"}<br>
           Prévu : ${epochToTimeString(data.depSched)}<br>
-          Réel : ${epochToTimeString(data.depReal)}
+          Réel  : ${epochToTimeString(data.depReal)}
         </div>
         <div class="section">
-          <h4>Arrivée</h4>
+          <h4>🛬 Arrivée</h4>
           ${data.arrival || "N/D"}<br>
           Prévu : ${epochToTimeString(data.arrSched)}<br>
-          Réel : ${epochToTimeString(data.arrReal)}
+          Réel  : ${epochToTimeString(data.arrReal)}
         </div>
       ` + mainContent;
-    } catch (err) {
-      console.warn("Erreur chargement détails :", err);
-      mainContent += `
+    } catch {
+      mainContent = `
         <div class="section">
-          <h4>Erreur</h4>
-          ❌ Impossible de charger les détails du vol
+          <h4>Erreur</h4>Impossible de charger les détails du vol
         </div>
-      `;
+      ` + mainContent;
     }
   }
-  // 6) On injecte et on affiche le panneau latéral
-  document.querySelector('#sidePanel .popup-header').innerHTML = headerContent;
-  document.querySelector('#sidePanel .popup-image').innerHTML = imageContent;
+
+  // injecte le contenu principal
   document.getElementById('sidePanelContent').innerHTML = mainContent;
-  
-  // Ajouter le bouton de favoris dans le footer si l'utilisateur est connecté
-  let footerContent = '';
-  if (isLoggedIn) {
-    footerContent = `
-  <button class="favorite-button" id="fav-${icao24}">
-    ★ Ajouter aux favoris
-  </button>
-`;
+
+  // 6) Footer favoris
+  let footer = '';
+  if (user) {
+    footer = `
+      <button class="favorite-button" id="fav-${icao24}">
+        ★ Ajouter aux favoris
+      </button>
+    `;
   }
-  
-  // Injecter le contenu dans le footer
-  document.querySelector('#sidePanel .popup-footer').innerHTML = footerContent;
-  
-  // Afficher le panneau
+  document.querySelector('#sidePanel .popup-footer').innerHTML = footer;
+
+  // 7) Affiche le panneau
   sidePanel.style.display = 'block';
 
-  // IMPORTANT: Ajouter l'event listener APRÈS avoir inséré le bouton dans le DOM
-  if (isLoggedIn) {
-    const favBtn = document.getElementById(`fav-${icao24}`);
-    if (favBtn) {
-      favBtn.addEventListener("click", async () => {
-        try {
-          const res = await fetch(`${API_BASE}/favorites`, {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ icao24, callsign })
-          });
-          if (res.ok) {
-            favBtn.textContent = "✅ Favori ajouté";
-            favBtn.disabled = true;
-            favBtn.classList.add("added");
-            loadFavorites();
-          } else {
-            alert("❌ Impossible d'ajouter le favori.");
-          }
-        } catch {
-          alert("⚠️ Erreur réseau.");
+  // 8) Gestion du clic « Ajouter aux favoris »
+  if (user) {
+    const btn = document.getElementById(`fav-${icao24}`);
+    btn.addEventListener('click', async () => {
+      try {
+        const r = await fetch(`${API_BASE}/favorites`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ icao24, callsign })
+        });
+        if (r.ok) {
+          btn.textContent = '✔ Favori ajouté';
+          btn.disabled = true;
+          btn.classList.add('added');
+          // recharge la liste si vous voulez
+          await loadFavorites();
+        } else {
+          alert('❌ Impossible d’ajouter aux favoris');
         }
-      });
-    }
-  }
-};
+      } catch {
+        alert('⚠️ Erreur réseau');
+      }
     });
-  } catch (e) {
-    console.error("🔴 Erreur de traitement des données WebSocket:", e);
   }
-};
+}
+
+
 
 // ————————————————————————————————————
 // Single-click dispatcher
@@ -429,13 +357,10 @@ map.on('singleclick', evt => {
     map.forEachFeatureAtPixel(evt.pixel, feat => {
       const p = feat.get('props');
       if (p && p.icao) {
-        const coord = feat.getGeometry().getCoordinates();
-        const html = `
-          <strong>${p.name} (${p.icao})</strong><br>
-          ${p.city}, ${p.country}
+        document.getElementById('popup-content').innerHTML = `
+          <strong>${p.name} (${p.icao})</strong><br>${p.city}, ${p.country}
         `;
-        document.getElementById('popup-content').innerHTML = html;
-        airportPopup.setPosition(coord);
+        airportPopup.setPosition(feat.getGeometry().getCoordinates());
       }
     });
   }
