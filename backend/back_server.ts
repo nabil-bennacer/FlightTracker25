@@ -190,11 +190,34 @@ router.delete("/delete-account", authMiddleware, (ctx) => {
     ctx.response.body   = { error: "Un administrateur ne peut pas se supprimer." };
     return;
   }
-  db.prepare("DELETE FROM users WHERE id = ?").run(id);
-  db.prepare("DELETE FROM user_flights WHERE user_id = ?").run(id);
-  db.prepare("DELETE FROM logs WHERE user_id = ?").run(id);
-  ctx.cookies.delete("token", { path: "/" });
-  ctx.response.body = { message: "Compte supprimé avec succès." };
+  try {
+    // 1) Supprimer ses favoris
+    db.prepare(`
+      DELETE FROM user_flights
+      WHERE user_id = ?
+    `).run(id);
+
+    // 2) Supprimer ses logs (vols consultés, etc.)
+    db.prepare(`
+      DELETE FROM logs
+      WHERE user_id = ?
+    `).run(id);
+
+    // 3) Maintenant on peut supprimer l’utilisateur
+    db.prepare(`
+      DELETE FROM users
+      WHERE id = ?
+    `).run(id);
+
+    // 4) Invalider le cookie / token
+    ctx.cookies.delete("token");
+
+    ctx.response.status = 204;
+  } catch (err) {
+    console.error("Erreur suppression compte :", err);
+    ctx.response.status = 500;
+    ctx.response.body = { error: "Impossible de supprimer le compte (FK fail)" };
+  }
 });
 
 // Enregistrement des clics de vol
