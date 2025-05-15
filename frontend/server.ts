@@ -3,8 +3,8 @@ import { Application, send } from "https://deno.land/x/oak@v17.1.4/mod.ts";
 const app = new Application();
 const PORT = 8080;
 
-const cert = await Deno.readTextFile("../certs/cert.crt");
-const key = await Deno.readTextFile("../certs/key.key");
+const cert = await Deno.readTextFile("../backend/certs/cert.crt");
+const key = await Deno.readTextFile("../backend/certs/key.key");
 
 app.use(async (ctx) => {
   const filePath = ctx.request.url.pathname;
