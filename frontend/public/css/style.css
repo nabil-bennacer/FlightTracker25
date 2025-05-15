@@ -21,6 +21,19 @@
   padding: 0;
 }
 
+
+body.admin-page {
+  background: url('../img/admin.png') no-repeat center center fixed;
+  background-size: cover;
+}
+
+/* Si votre <body> a déjà d’autres classes, vous pouvez faire : */
+.admin-page {
+  min-height: 100vh;
+  background: url('../img/admin.png') no-repeat center center fixed;
+  background-size: cover;
+}
+
 html, body {
   height: 100%;
   font-family: 'Roboto', sans-serif;
@@ -93,41 +106,75 @@ header h1 {
 }
 
 /* Dropdown User Menu */
-.dropdown { position: relative; }
-.dropbtn {
-  background: var(--primary);
-  color: var(--bg-white);
-  border: none;
-  padding: 8px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
+.navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(10px);
+  z-index: 100;
 }
-.dropdown-content {
-  display: none;
+.navbar-brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-right: auto;
+}
+.navbar-menu {
+  list-style: none;
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+}
+.navbar-menu a {
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 500;
+  padding: 0.5rem;
+  transition: background 0.2s;
+}
+.navbar-menu a:hover {
+  background: var(--bg-light);
+  border-radius: var(--radius-sm);
+}
+
+/* Dropdown */
+.has-dropdown {
+  position: relative;
+}
+.dropdown-menu {
   position: absolute;
+  top: 100%;
   right: 0;
+  display: none;
+  flex-direction: column;
   background: var(--bg-white);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  z-index: 30;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  min-width: 160px;
+  z-index: 200;
 }
-.dropdown-content a,
-.dropdown-content button {
+.dropdown-menu li {
+  list-style: none;
+}
+.dropdown-menu a {
   display: block;
-  padding: 8px 12px;
-  text-decoration: none;
+  padding: 0.5rem 1rem;
   color: var(--text);
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
 }
-.dropdown-content a:hover,
-.dropdown-content button:hover {
+.dropdown-menu a:hover {
   background: var(--bg-light);
 }
-.dropdown:hover .dropdown-content { display: block; }
+
+/* Affichage du menu au focus / hover */
+.has-dropdown:hover .dropdown-menu,
+.has-dropdown:focus-within .dropdown-menu {
+  display: flex;
+}
 
 /* Favorites Section */
 #favoritesSection {
