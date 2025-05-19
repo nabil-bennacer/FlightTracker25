@@ -450,4 +450,60 @@ button.secondary-button:hover {
 }
 
 
+/* header */
+.auth-page header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+}
+.auth-page .dropdown { position: relative; }
+.auth-page .dropbtn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+.auth-page .dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background: white;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.auth-page .dropdown:hover .dropdown-content {
+  display: block;
+}
+.auth-page .dropdown-content a {
+  display: block;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  color: #333;
+}
+.auth-page .dropdown-content a.active {
+  font-weight: bold;
+}
+
+/* container */
+.auth-container {
+  max-width: 320px;
+  margin: 4rem auto;
+  padding: 2rem;
+  background: rgba(255,255,255,0.9);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+/* prompt inscription */
+.signup-prompt {
+  margin: 1rem 0;
+}
+.signup-prompt .link-button {
+  color: var(--primary-color);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+
 
