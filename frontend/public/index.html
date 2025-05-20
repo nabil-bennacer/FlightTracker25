@@ -2,14 +2,18 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>FlightTracker</title>
+  <title>FlightTracker25</title>
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css">
 </head>
 <body>
-  <header>
-    <h1>FlightTracker25</h1>
-    <div id="searchContainer">
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="navbar-brand">
+      ✈ FlightTracker25
+    </div>
+
+    <div class="search-wrapper" id="searchContainer">
       <input
         type="text"
         id="flightSearch"
@@ -18,34 +22,40 @@
       />
       <ul id="searchSuggestions" class="suggestions"></ul>
     </div>
-    <div id="userMenu" class="dropdown">
-      <button class="dropbtn">☰</button>
-      <div class="dropdown-content" id="authOptions">
-        <a href="login.html" id="loginLink">Se connecter</a>
-        <a href="register.html" id="registerLink">S'inscrire</a>
-        <a href="admin.html" id="adminLink" style="display:none;">Administration</a>
-      </div>
+
+    <div class="has-dropdown" id="userMenu">
+      <button class="dropbtn" id="menuToggle">☰</button>
+      <ul class="dropdown-menu" id="authOptions">
+        <li><a href="login.html" id="loginLink">Se connecter</a></li>
+        <li><a href="register.html" id="registerLink">S'inscrire</a></li>
+        <li><a href="admin.html" id="adminLink" style="display:none;">Administration</a></li>
+        <li><a href="#" id="logout" style="display:none;">Déconnexion</a></li>
+      </ul>
     </div>
   </header>
 
+  <!-- Favoris -->
   <div id="favoritesSection" style="display:none; position:absolute; top:130px; left:20px; z-index:20;">
     <h3>⭐ Mes favoris</h3>
     <ul id="favoritesList"></ul>
   </div>
 
+  <!-- Carte -->
   <div id="map"></div>
-  
+
+  <!-- Popup aéroports -->
   <div id="popup" class="ol-popup">
     <a href="#" id="popup-closer">✖</a>
     <div id="popup-content"></div>
   </div>
 
+  <!-- Popup avions -->
   <div id="plane-popup" class="ol-popup">
     <a href="#" id="plane-popup-closer">✖</a>
     <div id="plane-popup-content"></div>
   </div>
 
-  <!-- Panneau latéral de détails -->
+  <!-- Panneau latéral détails vol -->
   <aside id="sidePanel" class="side-panel">
     <button id="sidePanelClose" class="popup-close">✖</button>
     <div class="popup-image"></div>
@@ -53,6 +63,21 @@
     <div id="sidePanelContent" class="popup-body"></div>
     <div class="popup-footer"></div>
   </aside>
+
+  <!-- Toggle menu hamburger -->
+  <script>
+    const wrapper = document.getElementById('userMenu');
+    const toggle  = document.getElementById('menuToggle');
+    toggle.addEventListener('click', e => {
+      e.stopPropagation();
+      wrapper.classList.toggle('open');
+    });
+    document.addEventListener('click', e => {
+      if (!wrapper.contains(e.target)) {
+        wrapper.classList.remove('open');
+      }
+    });
+  </script>
 
   <script src="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.js"></script>
   <script type="module" src="js/config.js"></script>
