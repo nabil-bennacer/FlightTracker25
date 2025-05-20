@@ -1,26 +1,48 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Inscription - FlightTracker</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="page-register">
-  <h1>Inscription</h1>
-  <form id="registerForm">
-    <label for="username">Nom d'utilisateur :</label>
-    <input type="text" id="username" name="username" required />
-    
-    <label for="email">Email :</label>
-    <input type="email" id="email" name="email" required />
-    
-    <label for="password">Mot de passe :</label>
-    <input type="password" id="password" name="password" required />
-    
-    <button type="submit">S'inscrire</button>
-  </form>
-  <script src="js/register.js"></script>
-  <button onclick="window.location.href='index.html'" class="secondary-button">← Revenir à l’accueil</button>
 
+<!-- 1) Classe page-register pour cibler le fond -->
+<body class="page-register">
+  <!-- 2) Header avec menu dropdown -->
+  <header>
+    <h1 class="logo">FlightTracker</h1>
+    <nav class="dropdown">
+      <button class="dropbtn">☰</button>
+      <div class="dropdown-content" id="authOptions">
+        <a href="login.html">Connexion</a>
+        <a href="register.html" class="active">Inscription</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="auth-container">
+    <h2>Créer un compte</h2>
+    <form id="registerForm">
+      <input type="text"    id="username" placeholder="Nom d’utilisateur" required>
+      <input type="email"   id="email"    placeholder="Email"           required>
+      <input type="password" id="password" placeholder="Mot de passe"   required>
+      <button type="submit" class="primary-button">
+        <!--  Icone avion à gauche du texte  -->
+        <img src="img/plane-icon.png" alt="" class="btn-icon" />
+        S’inscrire
+      </button>
+    </form>
+
+    <p class="signup-prompt">
+      Déjà un compte ?
+      <a href="login.html">Connectez-vous</a>
+    </p>
+
+    <button onclick="window.location.href='index.html'" class="secondary-button">
+      ← Retour à l’accueil
+    </button>
+  </main>
+
+  <script src="js/register.js" type="module"></script>
 </body>
 </html>

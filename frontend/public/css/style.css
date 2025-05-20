@@ -1,6 +1,9 @@
 /* style.css */
 
+/* Import font */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+/* Color & spacing variables */
 :root {
   --primary: #1976d2;
   --primary-light: #63a4ff;
@@ -15,25 +18,16 @@
   --space-md: 16px;
 }
 
-* {
+/* Global reset */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-
-body.admin-page {
-  background: url('../img/admin.png') no-repeat center center fixed;
-  background-size: cover;
-}
-
-/* Si votre <body> a déjà d’autres classes, vous pouvez faire : */
-.admin-page {
-  min-height: 100vh;
-  background: url('../img/admin.png') no-repeat center center fixed;
-  background-size: cover;
-}
-
+/* Base typography & background */
 html, body {
   height: 100%;
   font-family: 'Roboto', sans-serif;
@@ -41,82 +35,54 @@ html, body {
   background: var(--bg-light);
 }
 
-/* Fullscreen Map */
+/* Page-specific backgrounds */
+body.admin-page {
+  background: url('../img/admin.png') no-repeat center center fixed;
+  background-size: cover;
+  min-height: 100vh;
+}
+body.page-register {
+  background: url('../img/reg.jpg') no-repeat center center fixed;
+  background-size: cover;
+  min-height: 100vh;
+}
+
+/* Fullscreen map */
 #map {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
   z-index: 0;
 }
 
-/* Header */
-header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  padding: var(--space-md);
-  background: rgba(255,255,255,0.8);
-  backdrop-filter: blur(6px);
-  display: flex;
-  align-items: center;
-  z-index: 20;
+/* Zoom control */
+.zoom-control {
+  top: auto; bottom: 8px; left: 8px;
 }
-header h1 {
-  font-size: 1.5rem;
-  color: var(--primary);
-  margin-right: auto;
+.zoom-control .ol-zoom-in,
+.zoom-control .ol-zoom-out {
+  width: 24px; height: 24px;
+  line-height: 24px;
+  font-size: 16px;
+  padding: 0;
+}
+.zoom-control .ol-zoom-out {
+  margin-top: 4px;
 }
 
-/* Search Bar */
-#searchContainer {
-  position: relative;
-  width: 300px;
-  margin-right: var(--space-md);
-}
-#flightSearch {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 0.95rem;
-}
-.suggestions {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: var(--bg-white);
-  border: 1px solid var(--border);
-  border-top: none;
-  max-height: 200px;
-  overflow-y: auto;
-  list-style: none;
-  z-index: 30;
-}
-.suggestions li {
-  padding: 8px 12px;
-  cursor: pointer;
-}
-.suggestions li:hover {
-  background: var(--primary);
-  color: var(--bg-white);
-}
-
-/* Dropdown User Menu */
+/* Header / navbar */
+header,
 .navbar {
   position: fixed;
   top: 0; left: 0; right: 0;
-  height: 60px;
   display: flex;
   align-items: center;
-  padding: 0 1rem;
+  padding: var(--space-md);
   background: rgba(255,255,255,0.85);
   backdrop-filter: blur(10px);
   z-index: 100;
 }
+header h1,
 .navbar-brand {
   font-size: 1.5rem;
   font-weight: 700;
@@ -127,7 +93,6 @@ header h1 {
   list-style: none;
   display: flex;
   gap: 1rem;
-  margin: 0;
 }
 .navbar-menu a {
   text-decoration: none;
@@ -141,15 +106,23 @@ header h1 {
   border-radius: var(--radius-sm);
 }
 
-/* Dropdown */
-.has-dropdown {
+/* Dropdown menus */
+.has-dropdown,
+.dropdown {
   position: relative;
 }
-.dropdown-menu {
+.dropbtn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+.dropdown-menu,
+.dropdown-content {
+  display: none;
   position: absolute;
   top: 100%;
   right: 0;
-  display: none;
   flex-direction: column;
   background: var(--bg-white);
   border: 1px solid var(--border);
@@ -158,29 +131,28 @@ header h1 {
   min-width: 160px;
   z-index: 200;
 }
-.dropdown-menu li {
+.dropdown-menu li,
+.dropdown-content a {
   list-style: none;
-}
-.dropdown-menu a {
   display: block;
   padding: 0.5rem 1rem;
   color: var(--text);
+  text-decoration: none;
 }
-.dropdown-menu a:hover {
+.dropdown-menu a:hover,
+.dropdown-content a:hover {
   background: var(--bg-light);
 }
-
-/* Affichage du menu au focus / hover */
 .has-dropdown:hover .dropdown-menu,
-.has-dropdown:focus-within .dropdown-menu {
+.has-dropdown:focus-within .dropdown-menu,
+.dropdown:hover .dropdown-content {
   display: flex;
 }
 
-/* Favorites Section */
+/* Favorites sidebar */
 #favoritesSection {
   position: absolute;
-  top: 130px;
-  left: 20px;
+  top: 130px; left: 20px;
   z-index: 20;
   background: var(--bg-white);
   padding: var(--space-sm);
@@ -209,10 +181,11 @@ header h1 {
   cursor: pointer;
 }
 
-/* Bouton favoris dans side-panel */
+/* Favorite button in side-panel */
 .favorite-button {
   display: block;
   width: 100%;
+  margin-top: 1rem;
   padding: 0.75em 1em;
   background: #0288d1;
   color: #fff;
@@ -221,7 +194,6 @@ header h1 {
   font-size: 0.95rem;
   cursor: pointer;
   transition: background 0.2s;
-  margin-top: 1rem;
 }
 .favorite-button:hover {
   background: #0277bd;
@@ -234,36 +206,33 @@ header h1 {
   background: #2e7d32;
 }
 
-
-/* OL Popup for Airports */
+/* OL popups */
 .ol-popup {
   position: absolute;
-  background: white;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  bottom: 12px; left: -50px;
   padding: var(--space-md);
-  border-radius: var(--radius-md);
+  background: white;
   border: 1px solid var(--border);
-  bottom: 12px;
-  left: -50px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
   min-width: 200px;
   z-index: 20;
 }
 .ol-popup-closer {
   position: absolute;
-  top: 2px;
-  right: 8px;
+  top: 2px; right: 8px;
   cursor: pointer;
   color: #666;
 }
-.ol-popup-closer:hover { color: #000; }
+.ol-popup-closer:hover {
+  color: #000;
+}
 
-/* Side Panel for Flights */
+/* Side-panel (flight details) */
 .side-panel {
   display: none;
   position: absolute;
-  top: 60px;
-  right: 0;
-  bottom: 0;
+  top: 60px; right: 0; bottom: 0;
   width: 350px;
   background: var(--bg-white);
   box-shadow: -4px 0 16px rgba(0,0,0,0.2);
@@ -272,8 +241,7 @@ header h1 {
 }
 .popup-close {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 8px; right: 8px;
   background: none;
   border: none;
   font-size: 1.2rem;
@@ -295,19 +263,15 @@ header h1 {
   font-size: 1.1rem;
   font-weight: 700;
 }
-.popup-header .flight-sublabel {
-  display: block;
-  font-size: 0.85rem;
-  color: var(--secondary);
-  margin-top: 4px;
-}
 .popup-body {
   padding: var(--space-md);
   font-size: 0.9rem;
   line-height: 1.4;
 }
-.popup-body .section { margin-bottom: var(--space-md); }
-.popup-body .section h4 {
+.popup-body .section {
+  margin-bottom: var(--space-md);
+}
+.popup-body h4 {
   margin-bottom: 4px;
   font-size: 0.85rem;
   font-weight: 500;
@@ -321,16 +285,18 @@ header h1 {
   flex: 1;
   padding: 8px 0;
   background: none;
- 	border: none;
- 	cursor: pointer;
- 	font-size: 0.85rem;
- 	font-weight: 500;
- 	color: var(--primary);
- 	transition: background 0.2s;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--primary);
+  transition: background 0.2s;
 }
-.popup-footer .btn:hover { background: #f0f8ff; }
+.popup-footer .btn:hover {
+  background: #f0f8ff;
+}
 
-/* Forms (Login/Register) */
+/* Forms (login/register) */
 form {
   background: var(--bg-white);
   padding: var(--space-md);
@@ -368,22 +334,84 @@ form button:hover {
   background: var(--primary-light);
 }
 
-
-button.confirm-delete {
-  background: #d32f2f;
-  color: var(--bg-white);
+/* Auth pages container */
+.auth-container {
+  max-width: 360px;
+  margin: 6rem auto;
+  padding: 2rem;
+  background: rgba(255,255,255,0.85);
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+  text-align: center;
 }
 
-/* Container admin */
+/* Signup prompt */
+.signup-prompt {
+  margin: 1.5rem 0;
+  font-size: 0.95rem;
+  color: #555;
+}
+.signup-prompt a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+.signup-prompt a:hover,
+.signup-prompt a:focus {
+  text-decoration: underline;
+}
+
+/* Aviation-themed buttons */
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+.primary-button:hover {
+  background: var(--primary-light);
+  transform: translateY(-2px);
+}
+.primary-button:active {
+  transform: translateY(0);
+}
+.btn-icon {
+  width: 1.2em;
+  height: auto;
+}
+.secondary-button {
+  background: none;
+  color: var(--text);
+  border: 2px solid var(--text);
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background 0.2s, color 0.2s;
+}
+.secondary-button:hover {
+  background: var(--text);
+  color: #fff;
+}
+
+/* Admin container & table */
 .admin-container {
   max-width: 960px;
-  margin: 0 auto;
+  margin: 2rem auto;
   padding: 0 1rem;
+  overflow-x: auto;
   position: relative;
   z-index: 10;
 }
-
-/* Table des utilisateurs */
 #usersTable {
   width: 100%;
   border-collapse: collapse;
@@ -393,7 +421,7 @@ button.confirm-delete {
 }
 #usersTable th,
 #usersTable td {
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border);
   padding: 0.75rem;
   text-align: left;
   font-size: 0.9rem;
@@ -403,107 +431,16 @@ button.confirm-delete {
   font-weight: 600;
 }
 
-/* Retour bouton (secondary-button) */
-button.secondary-button {
+/* Admin back button */
+button.secondary-button.return {
   background: #607d8b;
   color: #fff;
   padding: 0.5em 1em;
-  border: none;
-  border-radius: 0.25rem;
-  cursor: pointer;
   font-size: 1rem;
   font-weight: 500;
-  transition: background 0.2s;
-  margin: 70px 0 25px 0; /* Espace suffisant sous le header */
-  display: inline-block;
+  margin-bottom: 1rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  z-index: 25;
-  position: relative;
 }
-button.secondary-button:hover {
+button.secondary-button.return:hover {
   background: #546e7a;
 }
-
-/* Rupture horizontale si table trop large */
-.admin-container { overflow-x: auto; }
-
-/* Positionnement du zoom-control en bas à gauche */
-.zoom-control {
-  top: auto;      /* on désactive le top par défaut */
-  bottom: 8px;    /* à 8px du bas */
-  left: 8px;      /* à 8px de la gauche */
-}
-
-/* Taille réduite des boutons + et – */
-.zoom-control .ol-zoom-in,
-.zoom-control .ol-zoom-out {
-  width: 24px;
-  height: 24px;
-  line-height: 24px;      /* centrer le “+” / “–” verticalement */
-  font-size: 16px;        /* taille du symbole */
-  padding: 0;
-}
-
-/* Espacement entre les deux boutons */
-.zoom-control button.ol-zoom-out {
-  margin-top: 4px;
-}
-
-
-/* header */
-.auth-page header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-}
-.auth-page .dropdown { position: relative; }
-.auth-page .dropbtn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-.auth-page .dropdown-content {
-  display: none;
-  position: absolute;
-  right: 0;
-  background: white;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-.auth-page .dropdown:hover .dropdown-content {
-  display: block;
-}
-.auth-page .dropdown-content a {
-  display: block;
-  padding: 0.5rem 1rem;
-  text-decoration: none;
-  color: #333;
-}
-.auth-page .dropdown-content a.active {
-  font-weight: bold;
-}
-
-/* container */
-.auth-container {
-  max-width: 320px;
-  margin: 4rem auto;
-  padding: 2rem;
-  background: rgba(255,255,255,0.9);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  text-align: center;
-}
-
-/* prompt inscription */
-.signup-prompt {
-  margin: 1rem 0;
-}
-.signup-prompt .link-button {
-  color: var(--primary-color);
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-
-
