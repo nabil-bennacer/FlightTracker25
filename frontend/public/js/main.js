@@ -183,6 +183,7 @@ function setSelectedFeature(feat) {
   selectedFeature = feat;
 }
 
+
 // Connexion WebSocket
 const ws = new WebSocket(API_BASE.replace('https://', 'wss://') + '/ws');
 ws.onopen = () => console.log("🟢 WebSocket connecté");
@@ -218,6 +219,16 @@ async function handleFlightClick(feat) {
   // 0) Sélection visuelle
   setSelectedFeature(feat);
 
+  if (user) {
+    fetch(`${API_BASE}/logs`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: (feat.get('callsign') || feat.get('icao24')).trim()
+      })
+    }).catch(console.warn);
+  }
   // 1) Propriétés de base
   const { icao24, callsign, lat, lon, heading } = feat.getProperties();
   const altM = feat.get('altitude');

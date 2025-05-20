@@ -444,44 +444,96 @@ form button:hover {
   color: #fff;
 }
 
-/* Admin container & table */
-.admin-container {
-  max-width: 960px;
-  margin: 2rem auto;
-  padding: 0 1rem;
-  overflow-x: auto;
-  position: relative;
-  z-index: 10;
+/*─────────────────────────────────────────────────────────*/
+/* ADMIN PAGE – Overlay sombre + header stylé             */
+/*─────────────────────────────────────────────────────────*/
+body.admin-page header {
+  background: rgba(0,0,0,0.6);
+  padding: var(--space-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-#usersTable {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-  background: #fff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-#usersTable th,
-#usersTable td {
-  border: 1px solid var(--border);
-  padding: 0.75rem;
-  text-align: left;
-  font-size: 0.9rem;
-}
-#usersTable th {
-  background: #f5f5f5;
-  font-weight: 600;
+body.admin-page header h1 {
+  color: #fff;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
 }
 
-/* Admin back button */
-button.secondary-button.return {
-  background: #607d8b;
-  color: #fff;
-  padding: 0.5em 1em;
-  font-size: 1rem;
-  font-weight: 500;
-  margin-bottom: 1rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+/*─────────────────────────────────────────────────────────*/
+/* CONTENEUR PRINCIPAL – Card semi-transparent + animation*/
+/*─────────────────────────────────────────────────────────*/
+.admin-container {
+  margin: 6rem auto;
+  max-width: 900px;
+  background: rgba(255,255,255,0.9);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+  padding: var(--space-lg, 32px);
+  animation: fadeInUp 0.8s ease-out both;
 }
-button.secondary-button.return:hover {
-  background: #546e7a;
+
+/*─────────────────────────────────────────────────────────*/
+/* TABLEAU – Design moderne                               */
+/*─────────────────────────────────────────────────────────*/
+#usersTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+}
+#usersTable th, #usersTable td {
+  padding: var(--space-sm) var(--space-md);
+  text-align: left;
+}
+#usersTable th {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+#usersTable tr:nth-child(even) {
+  background: var(--bg-light);
+}
+#usersTable tbody tr:hover {
+  background: var(--primary-light);
+  color: #fff;
+  transition: background 0.3s;
+}
+
+/*─────────────────────────────────────────────────────────*/
+/* BOUTONS – Retour & Déconnexion                         */
+/*─────────────────────────────────────────────────────────*/
+button.secondary-button, 
+a#logout {
+  background: var(--primary);
+  color: #fff !important;
+  border: none;
+  padding: 0.6em 1.2em;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-block;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+button.secondary-button:hover,
+a#logout:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+}
+
+/*─────────────────────────────────────────────────────────*/
+/* ANIMATIONS CLEFS                                      */
+/*─────────────────────────────────────────────────────────*/
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
