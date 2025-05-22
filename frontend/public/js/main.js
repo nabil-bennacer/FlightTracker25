@@ -2,6 +2,7 @@ import { API_BASE } from './config.js';
 import { loadFavorites } from './favoris.js';
 
 
+
 // ————————————————————————————————————
 // State
 // ————————————————————————————————————
@@ -350,29 +351,33 @@ async function handleFlightClick(feat) {
   }
 }
 
-
-
-// ————————————————————————————————————
-// Single-click dispatcher
-// ————————————————————————————————————
-map.on('singleclick', evt => {
-  let hit = false;
+function handlePlaneClick(evt) {
+  let hitPlane = false;
   map.forEachFeatureAtPixel(evt.pixel, feat => {
-    if (feat.onClick && !hit) {
+    if (feat.onClick && !hitPlane) {
       feat.onClick(evt.coordinate);
-      hit = true;
+      hitPlane = true;
     }
-  });
-  if (!hit) {
-    // airport popup
-    map.forEachFeatureAtPixel(evt.pixel, feat => {
-      const p = feat.get('props');
-      if (p && p.icao) {
-        document.getElementById('popup-content').innerHTML = `
-          <strong>${p.name} (${p.icao})</strong><br>${p.city}, ${p.country}
-        `;
-        airportPopup.setPosition(feat.getGeometry().getCoordinates());
-      }
-    });
+  }, { hitTolerance: 6 });
+}
+map.on('singleclick', handlePlaneClick);
+
+// 2) Survol des aéroports
+function handleAirportHover(evt) {
+  let airportHover = false;
+  map.forEachFeatureAtPixel(evt.pixel, feat => {
+    const p = feat.get('props');
+    if (p && p.icao) {
+      document.getElementById('popup-content').innerHTML = `
+        <strong>${p.name} (${p.icao})</strong><br>${p.city}, ${p.country}
+      `;
+      airportPopup.setPosition(feat.getGeometry().getCoordinates());
+      airportHover = true;
+      return true;  // stoppe la boucle dès qu'on a trouvé un aéroport
+    }
+  },{ hitTolerance : 5 });
+  if (!airportHover) {
+    airportPopup.setPosition(undefined);
   }
-});
+}
+map.on('pointermove', handleAirportHover);
