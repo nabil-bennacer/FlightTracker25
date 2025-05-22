@@ -29,29 +29,33 @@
 
 /* Base typography & background */
 html, body {
-  height: 100%;
+  min-height: 100vh;
   font-family: 'Roboto', sans-serif;
   color: var(--text);
-  background: var(--bg-light);
+  margin : 0;
+  padding: 0;
 }
 
 /* Page-specific backgrounds */
 body.admin-page {
-  background: url('../img/admin.jpg') no-repeat center center fixed;
+  background: url('../img/admin.jpg') no-repeat center;
   background-size: cover;
   min-height: 100vh;
+  background-attachment: scroll;
 }
 body.page-register {
-  background: url('../img/reg.jpg') no-repeat center center fixed;
+  background: url('../img/reg.jpg') no-repeat center;
   background-size: cover;
   min-height: 100vh;
+  background-attachment: scroll;
 }
 
 body.auth-page {
-  background: url('../img/login.png') no-repeat center center fixed;
+  background: url('../img/login.png') no-repeat center;
   background-size: cover;
+  background-attachment: scroll !important;
+  min-height: 100vh;
 }
-
 /* Fullscreen Map */
 #map {
   position: absolute;
@@ -527,6 +531,37 @@ button.secondary-button:hover,
 a#logout:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+}
+
+
+/* === Position et style du formulaire de login === */
+.login-container {
+  margin: 8rem auto 0;                /* remonte le cadre */
+  max-width: 360px;
+  background: rgba(255,255,255,0.75); /* plus transparent */
+  border-radius: var(--radius-md);
+  padding: 2rem;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+  text-align: center;
+}
+
+
+/* === Suppression des liens top gauche === */
+.auth-page header .dropdown,
+.auth-page header nav,
+.auth-page .dropdown-content {
+  display: none !important;
+}
+
+/* Optionnel : ajuster le bouton “Retour à l’accueil” */
+.login-container .secondary-button {
+  margin-top: 1.5rem;
+}
+
+/* 2) Login-container plus transparent */
+.login-container {
+  /* passe de 75% à 60% d’opacité */
+  background: rgba(255, 255, 255, 0.60) !important;
 }
 
 /*─────────────────────────────────────────────────────────*/

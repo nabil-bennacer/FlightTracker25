@@ -1,53 +1,30 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Connexion - FlightTracker</title>
-  <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <title>Connexion – FlightTracker25</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body class="auth-page">
-  <header>
-    <h1>FlightTracker</h1>
-    <nav class="dropdown" id="userMenu">
-      <button class="dropbtn">☰</button>
-      <div class="dropdown-content" id="authOptions">
-        <a href="login.html" class="active">Connexion</a>
-        <a href="register.html">Inscription</a>
-      </div>
-    </nav>
+  <header class="navbar">
+    <div class="navbar-brand">
+      <span class="brand-name"> ✈ FlightTracker25</span>
+    </div>
   </header>
 
-  <main class="auth-container">
+  <!-- Conteneur unique pour le formulaire -->
+  <main class="auth-container login-container">
     <h2>Connexion</h2>
     <form id="loginForm">
-      <input
-        id="username"
-        type="text"
-        name="username"
-        placeholder="Nom d'utilisateur"
-        required
-      ><br>
-      <input
-        id="password"
-        type="password"
-        name="password"
-        placeholder="Mot de passe"
-        required
-      ><br>
+      <input id="username" name="username" type="text"    placeholder="Nom d’utilisateur" required>
+      <input id="password" name="password" type="password" placeholder="Mot de passe"   required>
       <button type="submit" class="primary-button">Se connecter</button>
     </form>
-
-    <!-- Nouveau lien vers l’inscription -->
     <p class="signup-prompt">
-      Pas encore de compte ?
-      <a href="register.html" class="link-button">Inscrivez-vous</a>
+      Pas encore de compte ? <a href="register.html">Inscrivez-vous</a>
     </p>
-
-    <button
-      class="secondary-button"
-      onclick="window.location.href='index.html'"
-    >
-      ← Revenir à l’accueil
+    <button class="secondary-button" onclick="window.location.href='index.html'">
+      ← Retour à l’accueil
     </button>
   </main>
 
