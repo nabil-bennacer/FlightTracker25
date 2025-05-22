@@ -1,13 +1,11 @@
 import { API_BASE } from './config.js';
 import { loadFavorites } from './favoris.js';
 
-
-
 // ————————————————————————————————————
 // State
 // ————————————————————————————————————
-window.aircraftFeatures = {};   // icao24 → ol.Feature
-window.allFlights        = [];  // last raw flight array
+globalThis.aircraftFeatures = {};   // icao24 → ol.Feature
+globalThis.allFlights        = [];  // last raw flight array
 let user = null;                // { username, role } once logged in
 
 // ————————————————————————————————————
@@ -64,7 +62,7 @@ const map = new ol.Map({
 });
 const zoomCtrl = new ol.control.Zoom({ className: 'zoom-control' });
 map.addControl(zoomCtrl);
-window.map = map;
+globalThis.map = map;
 
 // Airports vector layer
 const airportSource = new ol.source.Vector();
@@ -190,20 +188,20 @@ const ws = new WebSocket(API_BASE.replace('https://', 'wss://') + '/ws');
 ws.onopen = () => console.log("🟢 WebSocket connecté");
 ws.onclose = evt => console.log(`🟠 WS fermé (${evt.code})`);
 ws.onerror = e => console.error("🔴 WS erreur :", e);
-ws.onmessage = async evt => {
+ws.onmessage = evt => {
   try {
     const planes = JSON.parse(evt.data);
-    window.allFlights = planes;
+    globalThis.allFlights = planes;
     planes.forEach(p => {
       const { icao24, lat, lon, heading, callsign, geo_altitude } = p;
       if (lat == null || lon == null) return;
       const coords = ol.proj.fromLonLat([lon, lat]);
-      let feat = window.aircraftFeatures[icao24];
+      let feat = globalThis.aircraftFeatures[icao24];
       if (!feat) {
         feat = new ol.Feature(new ol.geom.Point(coords));
         feat.setId(icao24);
         flightSource.addFeature(feat);
-        window.aircraftFeatures[icao24] = feat;
+        globalThis.aircraftFeatures[icao24] = feat;
       } else {
         feat.getGeometry().setCoordinates(coords);
       }

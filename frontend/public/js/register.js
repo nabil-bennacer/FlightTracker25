@@ -16,7 +16,7 @@ document.getElementById("registerForm").addEventListener("submit", async (e) => 
       const data = await res.json();
       if (res.ok) {
         alert("✅ Inscription réussie ! Vous pouvez maintenant vous connecter.");
-        window.location.href = "login.html";
+        globalThis.location.href = "login.html";
       } else {
         alert("❌ Erreur : " + (data.error || "Échec de l'inscription."));
       }

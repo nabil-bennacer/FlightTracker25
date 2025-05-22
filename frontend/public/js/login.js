@@ -12,7 +12,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       });
   
       if (res.ok) {
-        window.location.href = "index.html";
+        globalThis.location.href = "index.html";
       } else {
         alert("❌ Identifiants invalides");
       }

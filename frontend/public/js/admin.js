@@ -2,15 +2,15 @@ import { API_BASE } from './config.js';
 
 async function initAdminMenu() {
   const res = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
-  if (!res.ok) return window.location.href = 'login.html';
+  if (!res.ok) return globalThis.location.href = 'login.html';
   const { username, role } = await res.json();
-  if (role !== 'admin') return window.location.href = 'index.html';  //… utiliser le menu admin existant …
+  if (role !== 'admin') return globalThis.location.href = 'index.html';  //… utiliser le menu admin existant …
   document.getElementById('adminUsername').textContent = `Admin: ${username}`;
   
   document.getElementById('logout')?.addEventListener('click', async (e) => {
     e.preventDefault();
     await fetch(`${API_BASE}/logout`, { method: 'POST', credentials: 'include' });
-    window.location.href = 'index.html';
+    globalThis.location.href = 'index.html';
   });
 }
 async function loadAdminData() {
@@ -27,7 +27,7 @@ async function loadAdminData() {
     tbody.appendChild(tr);
   });
 }
-window.addEventListener('DOMContentLoaded', async () => {
+globalThis.addEventListener('DOMContentLoaded', async () => {
   await initAdminMenu();
   await loadAdminData();
 });

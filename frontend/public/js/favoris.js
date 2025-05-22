@@ -25,7 +25,7 @@ export async function loadFavorites() {
         };
         li.appendChild(btn);
         li.onclick = () => {
-        const feat = window.aircraftFeatures[f.icao24];
+        const feat = globalThis.aircraftFeatures[f.icao24];
         if (!feat) return alert('Vol non détecté.');
         const coord = feat.getGeometry().getCoordinates();
         map.getView().animate({ center: coord, zoom: 8 });
