@@ -8,7 +8,6 @@ const key = await Deno.readTextFile("../backend/certs/key.key");
 
 app.use(async (ctx) => {
   const filePath = ctx.request.url.pathname;
-  // Ici, on part du principe que tu exécutes le script depuis le dossier static_html_server
   const frontRoot = `${Deno.cwd()}/public`;
 
   try {

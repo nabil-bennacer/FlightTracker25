@@ -1,15 +1,19 @@
 import { API_BASE } from './config.js';
 
+// Ici, on gère tout ce qui est lié à l'admin sur le site, 
+
 async function initAdminMenu() {
   const res = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
   if (!res.ok) return globalThis.location.href = 'login.html';
   const { username, role } = await res.json();
-  if (role !== 'admin') return globalThis.location.href = 'index.html';  //… utiliser le menu admin existant …
+  if (role !== 'admin') return globalThis.location.href = 'index.html'; 
   document.getElementById('adminUsername').textContent = `Admin: ${username}`;
   
   document.getElementById('logout')?.addEventListener('click', async (e) => {
     e.preventDefault();
-    await fetch(`${API_BASE}/logout`, { method: 'POST', credentials: 'include' });
+    await fetch(`${API_BASE}/logout`, {
+      method: 'POST', 
+      credentials: 'include' });
     globalThis.location.href = 'index.html';
   });
 }

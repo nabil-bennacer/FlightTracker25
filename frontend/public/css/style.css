@@ -446,7 +446,7 @@ form button:hover {
   font-size: 0.9rem;
   cursor: pointer;
   margin-top: 1rem;
-  transition: background 0.2s, color 0.2s;
+  transition: background 0.2s, color 0.2s; 
 }
 .secondary-button:hover {
   background: var(--text);
@@ -470,6 +470,35 @@ body.admin-page header h1 {
   text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
 }
 
+body.admin-page .return {
+  position: fixed;
+  top: 60px;
+  left: var(--space-md);
+  z-index: 1000;
+}
+body.admin-page .logout {
+  position: fixed;
+  top: 60px;
+  right: var(--space-md);
+  z-index: 1000;
+}
+
+body.admin-page .return:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+}
+
+/* Style pour le nom d'utilisateur admin */
+#adminUsername {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 500;
+  text-align: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 /*─────────────────────────────────────────────────────────*/
 /* CONTENEUR PRINCIPAL – Card semi-transparent + animation*/
 /*─────────────────────────────────────────────────────────*/
@@ -481,6 +510,7 @@ body.admin-page header h1 {
   box-shadow: 0 8px 16px rgba(0,0,0,0.2);
   padding: var(--space-lg, 32px);
   animation: fadeInUp 0.8s ease-out both;
+  margin-top: calc(60px + 3rem);
 }
 
 /*─────────────────────────────────────────────────────────*/
