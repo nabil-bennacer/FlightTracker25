@@ -191,7 +191,7 @@ header.navbar {
 }
 .dropdown-menu a:hover {
   background: var(--primary-light);
-  color: var(--bg-white);
+  color: var(--bg-black);
 }
 /* Show on toggle */
 .has-dropdown.open .dropdown-menu {
@@ -278,7 +278,7 @@ header.navbar + * {
   position: absolute;
   top: 2px; right: 8px;
   cursor: pointer;
-  color: #666;
+  color:blue;
 }
 .ol-popup-closer:hover {
   color: #000;
@@ -592,6 +592,62 @@ a#logout:hover {
 .login-container {
   /* passe de 75% à 60% d’opacité */
   background: rgba(255, 255, 255, 0.60) !important;
+}
+
+.dropdown-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 16px;
+  color: var(--primary);
+  padding: 8px 12px;
+}
+
+.dropdown-toggle .arrow {
+  font-size: 25px;
+  transition: transform 0.3s ease;
+}
+
+.has-dropdown.open .dropdown-toggle .arrow {
+  transform: rotate(180deg);
+}
+
+/* Style du menu déroulant */
+.has-dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  min-width: 180px;
+  background: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  border-radius: 4px;
+  z-index: 1000;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.has-dropdown.open .dropdown-menu {
+  display: block;
+}
+
+.dropdown-menu li a {
+  display: block;
+  padding: 10px 15px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.dropdown-menu li a:hover {
+  background: var(--bg-light);
 }
 
 /*─────────────────────────────────────────────────────────*/

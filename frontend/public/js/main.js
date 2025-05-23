@@ -135,13 +135,19 @@ sideClose.onclick = () => {
 async function checkAuth() {
   try {
     const res = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
+    const menuToggle = document.getElementById('menuToggle');
+    const authOptions = document.getElementById('authOptions');
+    
     if (res.ok) {
       user = await res.json();
-      document.getElementById('userMenu').innerHTML = `
-        Bonjour, ${user.username}
-        <a href="#" id="logout">Déconnexion</a>
-        ${user.role !== 'admin' ? '<a href="#" id="delete">Supprimer mon compte</a>' : ''}
-        ${user.role === 'admin' ? '<a href="admin.html">Administration</a>' : ''}
+      
+      menuToggle.innerHTML = `Bonjour, ${user.username} <span class="arrow">▼</span>`;
+      
+      
+      authOptions.innerHTML = `
+        <li><a href="#" id="logout">Déconnexion</a></li>
+        ${user.role !== 'admin' ? '<li><a href="#" id="delete">Supprimer mon compte</a></li>' : ''}
+        ${user.role === 'admin' ? '<li><a href="admin.html">Administration</a></li>' : ''}
       `;
       document.getElementById('logout').onclick = async e => {
         e.preventDefault();
