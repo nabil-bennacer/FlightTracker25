@@ -9,7 +9,7 @@ async function initAdminMenu() {
   if (role !== 'admin') return globalThis.location.href = 'index.html'; 
   document.getElementById('adminUsername').textContent = `Admin: ${username}`;
   
-  document.getElementById('logout')?.addEventListener('click', async (e) => {
+  document.getElementById('logoutBtn')?.addEventListener('click', async (e) => {
     e.preventDefault();
     await fetch(`${API_BASE}/logout`, {
       method: 'POST', 
@@ -31,6 +31,7 @@ async function loadAdminData() {
     tbody.appendChild(tr);
   });
 }
+
 globalThis.addEventListener('DOMContentLoaded', async () => {
   await initAdminMenu();
   await loadAdminData();

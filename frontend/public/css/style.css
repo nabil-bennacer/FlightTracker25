@@ -505,7 +505,7 @@ body.admin-page .return:hover {
 .admin-container {
   margin: 6rem auto;
   max-width: 900px;
-  background: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.6);
   border-radius: var(--radius-md);
   box-shadow: 0 8px 16px rgba(0,0,0,0.2);
   padding: var(--space-lg, 32px);
@@ -544,7 +544,7 @@ body.admin-page .return:hover {
 /*─────────────────────────────────────────────────────────*/
 /* BOUTONS – Retour & Déconnexion                         */
 /*─────────────────────────────────────────────────────────*/
-button.secondary-button, 
+a.secondary-button, 
 a#logout {
   background: var(--primary);
   color: #fff !important;
