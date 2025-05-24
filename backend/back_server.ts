@@ -78,11 +78,6 @@ db.exec(`
 
 const router = new Router();
 
-router.get("/test-key", (ctx) => {
-  const key = Deno.env.get("RAPIDAPI_KEY");
-  ctx.response.body = { key: key || "❌ Aucune clé trouvée" };
-});
-
 async function generateJWT(payload: Record<string, unknown>) {
   const header = { alg: "HS512", typ: "JWT" };
   return await create(header, payload, JWT_SECRET);
@@ -513,6 +508,7 @@ async function fetchFromOpenSky(): Promise<FlightData[]> {
   }
 }
 
+// Fonction pour récupérer les vols OpenSky et les diffuser via WebSocket
 async function fetchAndBroadcastFlights() {
   const os = await fetchFromOpenSky();
   console.log("✈️ Vols récupérés :", os.length);  // ← on affiche le nombre de vols
@@ -522,7 +518,6 @@ async function fetchAndBroadcastFlights() {
       ws.send(JSON.stringify(os));
     } catch (e) {
       console.error("❌ Erreur d'envoi WebSocket:", e);
-      // Si la connexion est morte, on la retire
       try { 
         connectedSockets.delete(ws); 
       } catch (error) {

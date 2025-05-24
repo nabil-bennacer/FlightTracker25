@@ -106,19 +106,6 @@ document.getElementById('popup-closer').onclick = () => {
   return false;
 };
 
-// planePopup
-const planePopup = new ol.Overlay({
-  element: document.getElementById('plane-popup'),
-  autoPan: true,
-  autoPanAnimation: { duration: 250 }
-});
-map.addOverlay(planePopup);
-
-document.getElementById('plane-popup-closer').onclick = () => {
-  planePopup.setPosition(undefined);
-  return false;
-};
-
 // ————————————————————————————————————
 // Side-panel pour les détails des vols
 // ————————————————————————————————————
