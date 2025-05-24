@@ -60,7 +60,7 @@ db.exec(`
     timestamp INTEGER,
     FOREIGN KEY (flight_id) REFERENCES flights(id)
   );
-  CREATE TABLE IF NOT EXISTS user_flights (
+  CREATE TABLE IF NOT EXISTS user_flights ( 
     user_id INTEGER,
     flight_id INTEGER,
     PRIMARY KEY (user_id, flight_id),
@@ -160,13 +160,14 @@ router.post("/login", async (ctx) => {
     id: row.id,
     username,
     role: row.role,
-    exp: getNumericDate(60 * 60),
-  });  await ctx.cookies.set("token", token, {
+    exp: getNumericDate(48 * 60 * 60), // 48 heures
+  });  
+  await ctx.cookies.set("token", token, {
     httpOnly: true, 
-    secure: true, // Gardez cette option car votre serveur utilise HTTPS
+    secure: true, 
     sameSite: "strict", 
     path: "/", 
-    maxAge: 3600,
+    maxAge: 48 * 60 * 60, // 48 heures
   });
   ctx.response.body = { message: "Connexion réussie" };
 });
@@ -405,7 +406,7 @@ router.post("/favorites", authMiddleware, async (ctx: Context) => {
 
   console.log("Ajouté aux favoris:", icao24, callsign);
 
-  // 3) Crée ou ignore le vol dans la table flights
+  // 3) Insère le vol dans la table flights si ce n'est pas déjà fait
   db.prepare(
     `INSERT OR IGNORE INTO flights (icao24, callsign, created_at)
      VALUES (?, ?, ?)`
@@ -554,7 +555,7 @@ app.use(oakCors({
   preflightContinue: false,
 }));
 
-// 2) Gestion explicite des préflight OPTIONS
+
 app.use(async (ctx, next) => {
   if (ctx.request.method === "OPTIONS") {
     ctx.response.status = 204;
@@ -564,7 +565,7 @@ app.use(async (ctx, next) => {
   await next();
 });
 
-// 3) Montage du router
+
 app.use(router.routes());
 app.use(router.allowedMethods());
 

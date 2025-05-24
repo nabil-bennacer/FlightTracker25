@@ -3,8 +3,8 @@
  *
  * Dépend de :
  *   - window.allFlights      (tableau à jour des vols)
- *   - window.aircraftFeatures (features OL indexées par icao24)
- *   - window.map             (instance OpenLayers)
+ *   - window.aircraftFeatures (objets OpenLayers des avions)
+ *   - window.map             (OpenLayers)
  */
 
 document.addEventListener('DOMContentLoaded', () => {

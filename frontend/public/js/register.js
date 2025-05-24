@@ -1,4 +1,5 @@
-// static_html_server/front_end/register.js
+// ici on gère tout ce qui est lié à l'inscription des utilisateurs
+
 document.getElementById("registerForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const username = document.getElementById("username").value;

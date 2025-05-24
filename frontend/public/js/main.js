@@ -4,9 +4,9 @@ import { loadFavorites } from './favoris.js';
 // ————————————————————————————————————
 // State
 // ————————————————————————————————————
-globalThis.aircraftFeatures = {};   // icao24 → ol.Feature
-globalThis.allFlights        = [];  // last raw flight array
-let user = null;                // { username, role } once logged in
+globalThis.aircraftFeatures = {};   // objet associant icao24 à Feature OpenLayers
+globalThis.allFlights        = [];  // tableau des vols reçus par WebSocket
+let user = null;                // Utilisateur connecté
 
 // ————————————————————————————————————
 // Helpers
@@ -75,7 +75,7 @@ function airportStyle() {
   });
 }
 
-// Load airports from your backend
+// Chargement des aéroports depuis le backend
 async function loadAirports() {
   const res = await fetch(`${API_BASE}/airports`);
   if (!res.ok) return console.error("Échec load airports");
@@ -93,7 +93,7 @@ async function loadAirports() {
 }
 loadAirports();
 
-// OL overlay for airport popup
+// airportPopup
 const airportPopup = new ol.Overlay({
   element: document.getElementById('popup'),
   autoPan: true,
@@ -106,7 +106,7 @@ document.getElementById('popup-closer').onclick = () => {
   return false;
 };
 
-// OL overlay for plane popup
+// planePopup
 const planePopup = new ol.Overlay({
   element: document.getElementById('plane-popup'),
   autoPan: true,
@@ -120,7 +120,7 @@ document.getElementById('plane-popup-closer').onclick = () => {
 };
 
 // ————————————————————————————————————
-// Side-panel for flights
+// Side-panel pour les détails des vols
 // ————————————————————————————————————
 const sidePanel = document.getElementById('sidePanel');
 const sideClose = document.getElementById('sidePanelClose');
@@ -130,7 +130,7 @@ sideClose.onclick = () => {
 };
 
 // ————————————————————————————————————
-// Check authentication & adjust UI
+// Authentification & menu utilisateur
 // ————————————————————————————————————
 async function checkAuth() {
   try {
@@ -172,7 +172,7 @@ async function checkAuth() {
 checkAuth();
 
 // ————————————————————————————————————
-// Flight vector layer & WebSocket
+// Gestion des vols et WebSocket
 // ————————————————————————————————————
 const flightSource = new ol.source.Vector();
 map.addLayer(new ol.layer.Vector({ source: flightSource }));
@@ -191,9 +191,9 @@ function setSelectedFeature(feat) {
 
 // Connexion WebSocket
 const ws = new WebSocket(API_BASE.replace('https://', 'wss://') + '/ws');
-ws.onopen = () => console.log("🟢 WebSocket connecté");
-ws.onclose = evt => console.log(`🟠 WS fermé (${evt.code})`);
-ws.onerror = e => console.error("🔴 WS erreur :", e);
+ws.onopen = () => console.log(" WebSocket connecté");
+ws.onclose = evt => console.log(`WS fermé (${evt.code})`);
+ws.onerror = e => console.error("WS erreur :", e);
 ws.onmessage = evt => {
   try {
     const planes = JSON.parse(evt.data);
@@ -216,12 +216,11 @@ ws.onmessage = evt => {
       feat.onClick = coordinate => handleFlightClick(feat, coordinate);
     });
   } catch (e) {
-    console.error("🔴 Erreur traitement WS :", e);
+    console.error("Erreur traitement WS :", e);
   }
 };
 
 async function handleFlightClick(feat) {
-  // 0) Sélection visuelle
   setSelectedFeature(feat);
 
   if (user) {
@@ -255,7 +254,7 @@ async function handleFlightClick(feat) {
       }
     }
   } catch {
-    console.warn("❌ Impossible de charger la photo planespotters");
+    console.warn("Impossible de charger la photo planespotters");
   }
   // injecte la photo dans la zone dédiée
   document.querySelector('#sidePanel .popup-image').innerHTML = imageContent;
@@ -315,7 +314,7 @@ async function handleFlightClick(feat) {
   document.getElementById('sidePanelContent').innerHTML = mainContent;
 
   // 6) Footer favoris
-  let footer = '';
+  let footer = ''; 
   if (user) {
     footer = `
       <button class="favorite-button" id="fav-${icao24}">
@@ -355,6 +354,7 @@ async function handleFlightClick(feat) {
   }
 }
 
+// fonction pour gérer le clic sur un avion
 function handlePlaneClick(evt) {
   let hitPlane = false;
   map.forEachFeatureAtPixel(evt.pixel, feat => {

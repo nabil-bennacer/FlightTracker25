@@ -1,6 +1,6 @@
 import { API_BASE } from './config.js';
 
-// Ici, on gère tout ce qui est lié à l'admin sur le site, 
+// Ici, on gère tout ce qui est lié à l'admin sur le site
 
 async function initAdminMenu() {
   const res = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
