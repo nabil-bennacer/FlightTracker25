@@ -191,7 +191,7 @@ header.navbar {
 }
 .dropdown-menu a:hover {
   background: var(--primary-light);
-  color: var(--bg-black);
+  color: var(--bg-white);
 }
 /* Show on toggle */
 .has-dropdown.open .dropdown-menu {
@@ -647,8 +647,10 @@ a#logout:hover {
 }
 
 .dropdown-menu li a:hover {
-  background: var(--bg-light);
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
 }
+
 
 /*─────────────────────────────────────────────────────────*/
 /* ANIMATIONS CLEFS                                      */
