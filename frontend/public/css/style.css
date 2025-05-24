@@ -564,6 +564,7 @@ a#logout:hover {
 }
 
 
+
 /* === Position et style du formulaire de login === */
 .login-container {
   margin: 8rem auto 0;                /* remonte le cadre */
@@ -615,7 +616,7 @@ a#logout:hover {
   transform: rotate(180deg);
 }
 
-/* Style du menu déroulant */
+
 .has-dropdown {
   position: relative;
 }
@@ -650,6 +651,35 @@ a#logout:hover {
   background: rgba(0, 0, 0, 0.85);
   color: #fff;
 }
+
+
+
+.side-panel {
+  background: rgba(0, 0, 0, 0.85) !important;
+}
+
+
+.side-panel,
+.side-panel .popup-body,
+.side-panel .popup-header,
+.side-panel .popup-footer {
+  color: #fff !important;
+  font-size: 1rem !important;     
+  line-height: 1.5 !important;
+}
+
+.side-panel .popup-header .flight-title {
+  font-size: 1.4rem !important;
+  font-weight: 700;
+}
+
+/* Sous-titres de sections (📡 Position, ✈️ Départ…) */
+.side-panel .popup-body h4 {
+  font-size: 1.1rem !important;
+  color: var(--primary-light) !important;
+}
+
+
 
 
 /*─────────────────────────────────────────────────────────*/
