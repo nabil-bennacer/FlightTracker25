@@ -50,16 +50,6 @@ db.exec(`
     airline TEXT,
     created_at INTEGER
   );
-  CREATE TABLE IF NOT EXISTS positions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    flight_id INTEGER,
-    latitude REAL,
-    longitude REAL,
-    altitude REAL,
-    heading REAL,
-    timestamp INTEGER,
-    FOREIGN KEY (flight_id) REFERENCES flights(id)
-  );
   CREATE TABLE IF NOT EXISTS user_flights ( 
     user_id INTEGER,
     flight_id INTEGER,
