@@ -77,7 +77,7 @@ il sera necessaire de payer pour avoir accés à un plus grand nombre de requêt
 
 De plus, je voulais également faire intervenir une autre API qui est AMADEUS afin de récupérer une tranche du prix que pourrait couter un billet d'avion sur un vol en particulier. Cependant, elle s'est révélée instable et aucune autre API gratuite n'était accessible. Cette fonctionnalité a donc été retiré.
 
-# Solutions trouvées
+## Solutions trouvées
 Pour limiter le nombre de requêtes à l'API OpenSky, un intervalle a été mis en place côté backend pour l'interroger toutes les 5 minutes. En pratique, l'utilisateur ne verra donc la position des avions s'actualiser sur la carte toutes les 5 minutes.
 
 De plus, côté backend également un système de cache est utilisé pour optimiser les requêtes vers l’API externe AeroDataBox, utilisée pour enrichir les détails d’un vol.
