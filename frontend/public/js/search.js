@@ -1,11 +1,4 @@
-/**
- * Live search : suggestions et recentrage sur carte.
- *
- * Dépend de :
- *   - window.allFlights      (tableau à jour des vols)
- *   - window.aircraftFeatures (objets OpenLayers des avions)
- *   - window.map             (OpenLayers)
- */
+// Cet partie du code gère la recherche de vols dans l'interface utilisateur.
 
 document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('flightSearch');

@@ -145,14 +145,14 @@ router.post("/login", async (ctx) => {
     id: row.id,
     username,
     role: row.role,
-    exp: getNumericDate(48 * 60 * 60), // 48 heures
+    exp: getNumericDate(2 * 60 * 60), // 2 heures
   });  
   await ctx.cookies.set("token", token, {
     httpOnly: true, 
     secure: true, 
     sameSite: "strict", 
     path: "/", 
-    maxAge: 48 * 60 * 60, // 48 heures
+    maxAge: 2 * 60 * 60, // 2 heures
   });
   ctx.response.body = { message: "Connexion réussie" };
 });

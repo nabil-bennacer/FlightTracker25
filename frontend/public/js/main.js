@@ -1,16 +1,12 @@
 import { API_BASE } from './config.js';
 import { loadFavorites } from './favoris.js';
 
-// ————————————————————————————————————
-// State
-// ————————————————————————————————————
+
 globalThis.aircraftFeatures = {};   // objet associant icao24 à Feature OpenLayers
 globalThis.allFlights        = [];  // tableau des vols reçus par WebSocket
 let user = null;                // Utilisateur connecté
 
-// ————————————————————————————————————
-// Helpers
-// ————————————————————————————————————
+
 function epochToTimeString(ts) {
   if (!ts) return "N/A";
   const d = new Date(ts * 1000);
@@ -227,7 +223,7 @@ async function handleFlightClick(feat) {
     ? Math.round(altM * 3.28084).toLocaleString('en-US') + ' ft'
     : 'N/A';
 
-  // 2) Photo planespotters (optionnelle)
+  // 2) Photo planespotters
   let imageContent = '';
   try {
     const resImg = await fetch(
