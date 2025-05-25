@@ -54,8 +54,10 @@ const map = new ol.Map({
   view: new ol.View({
     center: ol.proj.fromLonLat([2.35, 48.85]),
     zoom: 6
-  })
+  }),
 });
+
+
 const zoomCtrl = new ol.control.Zoom({ className: 'zoom-control' });
 map.addControl(zoomCtrl);
 globalThis.map = map;
@@ -92,8 +94,6 @@ loadAirports();
 // airportPopup
 const airportPopup = new ol.Overlay({
   element: document.getElementById('popup'),
-  autoPan: true,
-  autoPanAnimation: { duration: 250 }
 });
 map.addOverlay(airportPopup);
 
