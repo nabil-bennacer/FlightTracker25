@@ -6,6 +6,8 @@ import { create, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 import "https://deno.land/std@0.203.0/dotenv/load.ts";
 import { verify } from "https://deno.land/x/djwt/mod.ts";
 
+declare const Deno: any;
+
 const PORT = 3000;
 
 const JWT_SECRET = await crypto.subtle.generateKey(
@@ -146,12 +148,12 @@ router.post("/login", async (ctx) => {
     username,
     role: row.role,
     exp: getNumericDate(2 * 60 * 60), // 2 heures
-  });  
+  });
   await ctx.cookies.set("token", token, {
-    httpOnly: true, 
-    secure: true, 
-    sameSite: "strict", 
-    path: "/", 
+    httpOnly: true,
+    secure: false,
+    sameSite: "strict",
+    path: "/",
     maxAge: 2 * 60 * 60, // 2 heures
   });
   ctx.response.body = { message: "Connexion réussie" };
@@ -160,7 +162,7 @@ router.post("/login", async (ctx) => {
 router.get("/auth/me", authMiddleware, (ctx) => {
   ctx.response.body = {
     username: ctx.state.user.username,
-    role:     ctx.state.user.role
+    role: ctx.state.user.role
   };
 });
 
@@ -173,7 +175,7 @@ router.delete("/delete-account", authMiddleware, (ctx) => {
   const { id, role } = ctx.state.user as { id: number; role: string };
   if (role === "admin") {
     ctx.response.status = 403;
-    ctx.response.body   = { error: "Un administrateur ne peut pas se supprimer." };
+    ctx.response.body = { error: "Un administrateur ne peut pas se supprimer." };
     return;
   }
   try {
@@ -208,7 +210,7 @@ router.delete("/delete-account", authMiddleware, (ctx) => {
 
 // Enregistrement des clics de vol
 router.post("/logs", authMiddleware, async (ctx) => {
-  const userId    = ctx.state.user.id;
+  const userId = ctx.state.user.id;
   const { action } = await ctx.request.body.json();
   db.prepare("INSERT INTO logs (user_id, action, timestamp) VALUES (?, ?, ?)")
     .run(userId, action, Date.now());
@@ -255,12 +257,12 @@ router.get("/admin/users", authMiddleware, adminMiddleware, (ctx) => {
 
 // on reçoit ctx.params.icao24, on récupère l'id réel avant de supprimer
 router.delete("/favorites/:icao24", authMiddleware, (ctx) => {
-  const userId  = ctx.state.user.id;
-  const icao24  = ctx.params.icao24;
+  const userId = ctx.state.user.id;
+  const icao24 = ctx.params.icao24;
 
   // 1) Cherche l'id interne du vol correspondant à cet icao24
   const row = db.prepare("SELECT id FROM flights WHERE icao24 = ?")
-                .get(icao24);
+    .get(icao24);
   if (row) {
     // 2) Supprime la liaison user_flights
     db.prepare("DELETE FROM user_flights WHERE user_id = ? AND flight_id = ?")
@@ -322,11 +324,11 @@ router.get("/details/:callsign", async (ctx) => {
       return;
     }
 
-   
-    
+
+
     const parseTime = (v: string | undefined): number | null =>
       v ? Date.parse(v) / 1000 : null;
-    
+
     const result = {
       airline: flight.airline?.name || "N/D",
       model: flight.aircraft?.model || "N/D",
@@ -344,18 +346,18 @@ router.get("/details/:callsign", async (ctx) => {
         flight.arrival?.predictedTime?.utc
       ),
     };
-    
+
     const depIata = flight.departure?.airport?.iata || "";
     const arrIata = flight.arrival?.airport?.iata || "";
-    const depDate = new Date(flight.departure?.scheduledTime?.utc).toISOString().slice(0,10);
+    const depDate = new Date(flight.departure?.scheduledTime?.utc).toISOString().slice(0, 10);
     Object.assign(result, { depIata, arrIata, depDate });
-    
+
     flightCache.set(callsign, { data: result, timestamp: now });
     ctx.response.body = result;
   } catch (e) {
     ctx.response.status = 500;
 
-    
+
     ctx.response.body = { error: "Erreur serveur", details: e.message };
   }
 });
@@ -375,7 +377,7 @@ router.get("/favorites", authMiddleware, (ctx) => {
         ON f.id = uf.flight_id      
      WHERE uf.user_id = ?
   `).all(userId);
-  
+
 
   ctx.response.body = rows;
 });
@@ -425,38 +427,7 @@ const connectedSockets = new Set<WebSocket>();
 // ← cache global des derniers vols OpenSky
 let lastFlights: FlightData[] = [];
 
-router.get("/ws", (ctx) => {
-  if (!ctx.isUpgradable) ctx.throw(501);
-  
-  console.log("⚡ Nouvelle connexion WebSocket");
-  const ws = ctx.upgrade();
-  connectedSockets.add(ws);
-
-  // Attente d'un délai court pour s'assurer que la connexion est établie
-  setTimeout(() => {
-    try {
-      if (ws.readyState === 1) { // OPEN = 1
-        const dataToSend = JSON.stringify(lastFlights);
-        console.log(`📤 Envoi de ${lastFlights.length} vols sur WebSocket`);
-        ws.send(dataToSend);
-      } else {
-        console.log(`⚠️ WebSocket pas prêt, état: ${ws.readyState}`);
-      }
-    } catch (e) {
-      console.error("❌ Erreur d'envoi WebSocket:", e);
-    }
-  }, 300); // Attendre 300ms pour être sûr
-
-  ws.onclose = () => {
-    console.log("🔌 Déconnexion WebSocket");
-    connectedSockets.delete(ws);
-  };
-
-  ws.onerror = (e) => {
-    console.error("⛔ Erreur WebSocket:", e);
-    connectedSockets.delete(ws); // Supprimer les sockets en erreur
-  };
-});
+// Route /ws gérée directement dans Deno.serve() ci-dessous (upgradeWebSocket natif)
 
 
 interface FlightData {
@@ -518,8 +489,8 @@ async function fetchAndBroadcastFlights() {
       ws.send(JSON.stringify(os));
     } catch (e) {
       console.error("❌ Erreur d'envoi WebSocket:", e);
-      try { 
-        connectedSockets.delete(ws); 
+      try {
+        connectedSockets.delete(ws);
       } catch (error) {
         console.error("Erreur lors de la suppression du socket:", error);
       }
@@ -533,10 +504,10 @@ fetchAndBroadcastFlights();
 
 const app = new Application();
 app.use(oakCors({
-  origin: "https://localhost:8080",        
-  credentials: true,                       
-  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
-  allowedHeaders: ["Content-Type","Cookie","Authorization"],
+  origin: "https://localhost:8080",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Cookie", "Authorization"],
   preflightContinue: false,
 }));
 
@@ -555,4 +526,48 @@ app.use(router.routes());
 app.use(router.allowedMethods());
 
 console.log(`Backend HTTPS sur https://localhost:${PORT}`);
-await app.listen({ port: PORT, secure: true, cert, key });
+await Deno.serve(
+  {
+    port: PORT,
+    cert,
+    key,
+  },
+  (req: Request, info: unknown) => {
+    const url = new URL(req.url);
+    if (url.pathname === "/ws") {
+      // Upgrade WebSocket natif Deno 2.x - la response DOIT être retournée
+      const { socket: ws, response } = Deno.upgradeWebSocket(req);
+      connectedSockets.add(ws);
+      console.log("⚡ Nouvelle connexion WebSocket");
+
+      ws.onopen = () => {
+        setTimeout(() => {
+          try {
+            if (ws.readyState === 1) {
+              const dataToSend = JSON.stringify(lastFlights);
+              console.log(`📤 Envoi de ${lastFlights.length} vols sur WebSocket`);
+              ws.send(dataToSend);
+            } else {
+              console.log(`⚠️ WebSocket pas prêt, état: ${ws.readyState}`);
+            }
+          } catch (e) {
+            console.error("❌ Erreur d'envoi WebSocket:", e);
+          }
+        }, 300);
+      };
+
+      ws.onclose = () => {
+        console.log("🔌 Déconnexion WebSocket");
+        connectedSockets.delete(ws);
+      };
+
+      ws.onerror = (e: Event) => {
+        console.error("⛔ Erreur WebSocket:", e);
+        connectedSockets.delete(ws);
+      };
+
+      return response; 
+    }
+    return app.fetch(req, info);
+  },
+);

@@ -1,5 +1,7 @@
 import { Application, send } from "https://deno.land/x/oak@v17.1.4/mod.ts";
 
+declare const Deno: any;
+
 const app = new Application();
 const PORT = 8080;
 
@@ -21,9 +23,11 @@ app.use(async (ctx) => {
 });
 
 console.log(`Front server (HTTPs) on https://localhost:${PORT}`);
-await app.listen({
-  port: PORT,
-  secure: true,
-  cert,
-  key,
-});
+await Deno.serve(
+  {
+    port: PORT,
+    cert,
+    key,
+  },
+  (req: Request, info: unknown) => app.fetch(req, info),
+);
