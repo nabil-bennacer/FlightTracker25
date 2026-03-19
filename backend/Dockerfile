@@ -1,18 +1,18 @@
-FROM denoland/deno:ubuntu-1.46.3
-
+FROM denoland/deno:debian
 
 WORKDIR /app
 
+
 COPY backend/ ./backend/
 
-# Créer le dossier data qui sera utilisé comme point de montage pour SQLite
-RUN mkdir ./data
 
-# Se placer dans le dossier backend pour l'exécution
+COPY data/ ./data/
+
+
 WORKDIR /app/backend
 
-# Exposer le port du backend
+# 5. Exposer le port
 EXPOSE 3000
 
-# Lancer le serveur avec les bonnes permissions
-CMD ["run", "--allow-net", "--allow-read","--allow-write", "--allow-env", "--allow-ffi", "--unstable-ffi", "back_server.ts"]
+
+CMD ["run", "--allow-net", "--allow-read","--allow-write", "--allow-env", "--allow-ffi", "--unstable-ffi", "back_server.ts"] 
