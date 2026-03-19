@@ -1,10 +1,12 @@
 // static_html_server/front_end/login.js
+import { API_BASE } from './config.js';
+
 document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.target));
   
     try {
-      const res = await fetch("https://localhost:3000/login", {
+      const res = await fetch(`${API_BASE}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

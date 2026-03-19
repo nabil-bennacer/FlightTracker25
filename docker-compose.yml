@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .                   # Le contexte de build est la racine globale
+      dockerfile: backend/Dockerfile 
+    image: nabilbenn/flighttracker-backend:latest
+    container_name: ft25_backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - ./backend/.env
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .                   # Le contexte de build est la racine globale
+      dockerfile: frontend/Dockerfile 
+    image: nabilbenn/flighttracker-frontend:latest
+    container_name: ft25_frontend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+    restart: unless-stopped

@@ -1,4 +1,5 @@
 // ici on gère tout ce qui est lié à l'inscription des utilisateurs
+import { API_BASE } from './config.js';
 
 document.getElementById("registerForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -7,7 +8,7 @@ document.getElementById("registerForm").addEventListener("submit", async (e) => 
     const password = document.getElementById("password").value;
   
     try {
-      const res = await fetch("https://localhost:3000/register", {
+      const res = await fetch(`${API_BASE}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, email, password }),
