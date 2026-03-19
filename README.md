@@ -119,5 +119,9 @@ deno run --allow-net --allow-read server.ts
 Dans votre navigateur : 
 https://localhost:8080
 
+## Deploiement 
+Lien l'application déployée :
+https://144.24.192.86:8080
+
 
 
